@@ -3,7 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NotebookLM-py v2026.07.23.19 Live</title>
+  <title>NotebookLM-py v2026.07.23.19 Live | Gamified Network Engineer App</title>
+
+  <!-- Firebase Web SDK Compat Libraries -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics-compat.js"></script>
+
   <style>
     :root {
       --bg: #0d1117;
@@ -17,10 +24,21 @@
       --red: #f85149;
       --mono: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
       --radius: 8px;
+
+      /* Auth UI palette matching design screenshot */
+      --auth-bg: #f8f6f0;
+      --auth-card-bg: #ffffff;
+      --auth-border: #e5e7eb;
+      --auth-text: #1a202c;
+      --auth-subtext: #64748b;
+      --auth-primary-btn: #1e4d38;
+      --auth-primary-hover: #163c2c;
+      --auth-status-bg: #dcfce7;
+      --auth-status-icon: #166534;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--fg);
       height: 100vh;
@@ -28,6 +46,234 @@
       display: flex;
       flex-direction: column;
     }
+
+    /* Auth Page Overlay / Screen */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--auth-bg);
+      color: var(--auth-text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      overflow-y: auto;
+    }
+    .auth-overlay.hidden { display: none; }
+
+    .auth-header {
+      text-align: center;
+      margin-bottom: 1.75rem;
+      max-width: 480px;
+    }
+    .auth-header h2 {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: #111827;
+      letter-spacing: -0.02em;
+      margin-bottom: 0.6rem;
+    }
+    .auth-header p {
+      font-size: 0.95rem;
+      color: var(--auth-subtext);
+      line-height: 1.45;
+    }
+
+    .auth-card {
+      background: var(--auth-card-bg);
+      border: 1px solid var(--auth-border);
+      border-radius: 16px;
+      padding: 2.25rem 2rem;
+      width: 100%;
+      max-width: 450px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+
+    .btn-google {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      background: #ffffff;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 0.75rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1f2937;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-google:hover {
+      background: #f9fafb;
+      border-color: #9ca3af;
+    }
+    .google-icon {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .auth-divider {
+      display: flex;
+      align-items: center;
+      margin: 1.5rem 0;
+      color: #9ca3af;
+      font-size: 0.85rem;
+    }
+    .auth-divider::before,
+    .auth-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: #e5e7eb;
+    }
+    .auth-divider span {
+      padding: 0 0.75rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+      text-align: left;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 0.4rem;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      background: #ffffff;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .form-group input:focus {
+      border-color: var(--auth-primary-btn);
+      box-shadow: 0 0 0 3px rgba(30, 77, 56, 0.12);
+    }
+    .password-wrap {
+      position: relative;
+    }
+    .password-wrap input {
+      padding-right: 2.75rem;
+    }
+    .toggle-pwd {
+      position: absolute;
+      right: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #6b7280;
+      padding: 0.2rem;
+      display: flex;
+      align-items: center;
+    }
+    .toggle-pwd:hover { color: #111827; }
+
+    .btn-primary-auth {
+      width: 100%;
+      background: var(--auth-primary-btn);
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.25rem;
+      transition: background 0.15s;
+    }
+    .btn-primary-auth:hover {
+      background: var(--auth-primary-hover);
+    }
+    .btn-secondary-auth {
+      width: 100%;
+      background: #ffffff;
+      color: #111827;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.75rem;
+      transition: background 0.15s;
+    }
+    .btn-secondary-auth:hover {
+      background: #f9fafb;
+    }
+
+    .forgot-link {
+      display: block;
+      text-align: center;
+      margin-top: 1.25rem;
+      font-size: 0.875rem;
+      color: var(--auth-primary-btn);
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .info-cards {
+      width: 100%;
+      max-width: 450px;
+      margin-top: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .info-card {
+      background: #ffffff;
+      border: 1px solid var(--auth-border);
+      border-radius: 14px;
+      padding: 0.9rem 1.15rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    }
+    .info-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--auth-status-bg);
+      color: var(--auth-status-icon);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .info-content {
+      font-size: 0.88rem;
+      color: #111827;
+      text-align: left;
+    }
+    .info-content strong {
+      font-weight: 600;
+    }
+    .info-content .avail-text {
+      color: #166534;
+      font-weight: 600;
+    }
+    .info-sub {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-top: 0.15rem;
+    }
+
+    /* Main Workspace Header & App UI */
     header {
       display: flex;
       align-items: center;
@@ -46,6 +292,29 @@
       background-clip: text;
     }
     .header-right { display: flex; align-items: center; gap: 0.75rem; }
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.2rem 0.6rem 0.2rem 0.3rem;
+      font-size: 0.75rem;
+      color: var(--fg);
+    }
+    .user-avatar {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.7rem;
+    }
     .version-badge {
       display: inline-flex;
       align-items: center;
@@ -66,7 +335,7 @@
       animation: pulse 2s infinite;
     }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
-    .settings-btn {
+    .settings-btn, .signout-btn {
       background: var(--bg);
       border: 1px solid var(--border);
       border-radius: var(--radius);
@@ -76,7 +345,8 @@
       font-size: 0.8rem;
       transition: border-color 0.2s;
     }
-    .settings-btn:hover { border-color: var(--accent); }
+    .settings-btn:hover, .signout-btn:hover { border-color: var(--accent); }
+
     .settings-panel {
       display: none;
       background: var(--card);
@@ -304,16 +574,95 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #484f58; }
-    .runtime-config { display: none; }
   </style>
 </head>
 <body>
 
+  <!-- Firebase Google / Password Sign-In View -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-header">
+      <h2>Sign in to NotebookLM-py</h2>
+      <p>Access your Google Gemini notebooks, generate audio overviews, chat with sources, and automate NotebookLM.</p>
+    </div>
+
+    <div class="auth-card">
+      <button class="btn-google" id="btnGoogleAuth">
+        <svg class="google-icon" viewBox="0 0 24 24">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.29v3.15C3.26 21.3 7.31 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.29C.47 8.2.0 10.05.0 12s.47 3.8 1.29 5.42l3.99-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.29 6.58l3.99 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+        Continue with Google
+      </button>
+
+      <div class="auth-divider">
+        <span>or sign in with email</span>
+      </div>
+
+      <form id="authForm" onsubmit="return false;">
+        <div class="form-group">
+          <label for="authEmail">Email</label>
+          <input type="email" id="authEmail" placeholder="you@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label for="authPassword">Password</label>
+          <div class="password-wrap">
+            <input type="password" id="authPassword" placeholder="Enter your password" required>
+            <button type="button" class="toggle-pwd" id="togglePwdBtn" aria-label="Toggle password visibility">
+              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="button" class="btn-primary-auth" id="btnSignInEmail">Sign in</button>
+        <button type="button" class="btn-secondary-auth" id="btnCreateAccount">Create account</button>
+        <a class="forgot-link" id="btnForgotPassword">Forgot password?</a>
+      </form>
+    </div>
+
+    <div class="info-cards">
+      <div class="info-card">
+        <div class="info-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <div class="info-content">
+          <div>System status: <span class="avail-text">Available</span></div>
+          <div class="info-sub">All systems operational.</div>
+        </div>
+      </div>
+
+      <div class="info-card">
+        <div class="info-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <div class="info-content">
+          <div><strong>Your jobs and downloads stay private to your account.</strong></div>
+          <div class="info-sub">We never share your files or data.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Workspace Main Header -->
   <header>
     <h1>NotebookLM-py</h1>
     <div class="header-right">
+      <div class="user-pill" id="userPill" style="display:none;">
+        <div class="user-avatar" id="userAvatar">G</div>
+        <span id="userEmailText">user@gaijinworld.com</span>
+      </div>
       <span class="version-badge" id="versionBadge">v2026.07.23.19 Live</span>
       <button class="settings-btn" id="settingsToggle">Settings</button>
+      <button class="signout-btn" id="btnSignOut" style="display:none;">Sign Out</button>
     </div>
   </header>
 
@@ -398,7 +747,24 @@
   (function() {
     "use strict";
 
+    // Firebase App Configuration for Gamified Network Engineer App
+    var firebaseConfig = {
+      apiKey: "AIzaSyAr5oe2DNaYQseh2iYPvBucZvibKyqNLOc",
+      authDomain: "gamified-network-engineer-app.firebaseapp.com",
+      projectId: "gamified-network-engineer-app",
+      storageBucket: "gamified-network-engineer-app.firebasestorage.app",
+      messagingSenderId: "465331311664",
+      appId: "1:465331311664:web:d558dfc8f83e81edcf89f5",
+      measurementId: "G-DCFM1RVPP5"
+    };
+
+    if (window.firebase && !firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+      if (firebase.analytics) firebase.analytics();
+    }
+
     var state = {
+      user: null,
       apiUrl: localStorage.getItem("nblm_apiUrl") || "http://localhost:8000",
       apiToken: localStorage.getItem("nblm_apiToken") || "",
       notebooks: [],
@@ -409,6 +775,18 @@
     };
 
     var el = {
+      authOverlay: document.getElementById("authOverlay"),
+      btnGoogleAuth: document.getElementById("btnGoogleAuth"),
+      authEmail: document.getElementById("authEmail"),
+      authPassword: document.getElementById("authPassword"),
+      togglePwdBtn: document.getElementById("togglePwdBtn"),
+      btnSignInEmail: document.getElementById("btnSignInEmail"),
+      btnCreateAccount: document.getElementById("btnCreateAccount"),
+      btnForgotPassword: document.getElementById("btnForgotPassword"),
+      userPill: document.getElementById("userPill"),
+      userAvatar: document.getElementById("userAvatar"),
+      userEmailText: document.getElementById("userEmailText"),
+      btnSignOut: document.getElementById("btnSignOut"),
       settingsToggle: document.getElementById("settingsToggle"),
       settingsPanel: document.getElementById("settingsPanel"),
       apiUrl: document.getElementById("apiUrl"),
@@ -427,6 +805,155 @@
 
     el.apiUrl.value = state.apiUrl;
     el.apiToken.value = state.apiToken;
+
+    // Toggle Password Visibility
+    el.togglePwdBtn.addEventListener("click", function() {
+      var isPwd = el.authPassword.type === "password";
+      el.authPassword.type = isPwd ? "text" : "password";
+    });
+
+    // Firebase Auth State Listener
+    if (window.firebase && firebase.auth) {
+      firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+          state.user = user;
+          onUserAuthenticated(user);
+        } else {
+          state.user = null;
+          showAuthOverlay(true);
+        }
+      });
+    }
+
+    // Google Sign In via Firebase Auth Popup
+    el.btnGoogleAuth.addEventListener("click", function() {
+      if (!window.firebase || !firebase.auth) return;
+      var provider = new firebase.auth.GoogleAuthProvider();
+      provider.addScope("profile");
+      provider.addScope("email");
+      firebase.auth().signInWithPopup(provider).then(function(result) {
+        var user = result.user;
+        onUserAuthenticated(user);
+      }).catch(function(err) {
+        alert("Google Sign-In failed: " + err.message);
+      });
+    });
+
+    // Email Sign In
+    el.btnSignInEmail.addEventListener("click", function() {
+      var email = el.authEmail.value.trim();
+      var password = el.authPassword.value.trim();
+      if (!email || !password) {
+        alert("Please enter both email and password.");
+        return;
+      }
+      if (!window.firebase || !firebase.auth) return;
+      firebase.auth().signInWithEmailAndPassword(email, password).then(function(res) {
+        onUserAuthenticated(res.user);
+      }).catch(function(err) {
+        alert("Sign in failed: " + err.message);
+      });
+    });
+
+    // Create Account
+    el.btnCreateAccount.addEventListener("click", function() {
+      var email = el.authEmail.value.trim();
+      var password = el.authPassword.value.trim();
+      if (!email || !password) {
+        alert("Please enter an email and password to create an account.");
+        return;
+      }
+      if (!window.firebase || !firebase.auth) return;
+      firebase.auth().createUserWithEmailAndPassword(email, password).then(function(res) {
+        alert("Account created successfully!");
+        onUserAuthenticated(res.user);
+      }).catch(function(err) {
+        alert("Account creation failed: " + err.message);
+      });
+    });
+
+    // Forgot Password
+    el.btnForgotPassword.addEventListener("click", function() {
+      var email = el.authEmail.value.trim();
+      if (!email) {
+        alert("Please enter your email address to receive password reset instructions.");
+        return;
+      }
+      if (!window.firebase || !firebase.auth) return;
+      firebase.auth().sendPasswordResetEmail(email).then(function() {
+        alert("Password reset email sent to " + email);
+      }).catch(function(err) {
+        alert("Error: " + err.message);
+      });
+    });
+
+    // Sign Out
+    el.btnSignOut.addEventListener("click", function() {
+      if (window.firebase && firebase.auth) {
+        firebase.auth().signOut().then(function() {
+          showAuthOverlay(true);
+        });
+      } else {
+        showAuthOverlay(true);
+      }
+    });
+
+    function showAuthOverlay(show) {
+      if (show) {
+        el.authOverlay.classList.remove("hidden");
+        el.userPill.style.display = "none";
+        el.btnSignOut.style.display = "none";
+      } else {
+        el.authOverlay.classList.add("hidden");
+        el.userPill.style.display = "flex";
+        el.btnSignOut.style.display = "inline-block";
+      }
+    }
+
+    function onUserAuthenticated(user) {
+      showAuthOverlay(false);
+      var email = user.email || user.displayName || "User";
+      el.userEmailText.textContent = email;
+      el.userAvatar.textContent = (email[0] || "U").toUpperCase();
+
+      // Register/sync notebooklm-py in Cloud Firestore artifacts collection
+      syncFirestoreArtifact(user);
+
+      // Load user's Gemini / NotebookLM notebooks
+      if (state.apiUrl) {
+        testConnection();
+      }
+    }
+
+    function syncFirestoreArtifact(user) {
+      if (!window.firebase || !firebase.firestore) return;
+      try {
+        var db = firebase.firestore();
+        db.collection("artifacts").doc("notebooklm-py").set({
+          name: "notebooklm-py",
+          title: "NotebookLM Py",
+          description: "Google Gemini NotebookLM Py Integration Artifact for Gamified Network Engineer App",
+          url: "http://gaijinworld-local.local/notebooklm-py/",
+          status: "active",
+          projectId: "gamified-network-engineer-app",
+          projectNumber: "465331311664",
+          parentOrg: "gaijinworld.com",
+          connectedUser: {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName || user.email,
+            photoURL: user.photoURL || null
+          },
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true }).then(function() {
+          console.log("Firestore artifact 'notebooklm-py' synced successfully.");
+        }).catch(function(e) {
+          console.warn("Firestore sync notice:", e);
+        });
+      } catch(e) {
+        console.warn("Firestore sync warning:", e);
+      }
+    }
 
     el.settingsToggle.addEventListener("click", function() {
       el.settingsPanel.classList.toggle("open");
@@ -490,7 +1017,7 @@
     }
 
     function loadNotebooks() {
-      el.notebookList.innerHTML = '<div class="loading">Loading notebooks...</div>';
+      el.notebookList.innerHTML = '<div class="loading">Loading user\'s notebooks...</div>';
       api("GET", "/notebooks").then(function(data) {
         state.notebooks = data.notebooks || [];
         renderNotebooks();
@@ -501,12 +1028,12 @@
 
     function renderNotebooks() {
       if (!state.notebooks.length) {
-        el.notebookList.innerHTML = '<div class="empty-state"><p>No notebooks found.</p></div>';
+        el.notebookList.innerHTML = '<div class="empty-state"><p>No Google Gemini notebooks found for this user.</p></div>';
         return;
       }
       var html = state.notebooks.map(function(nb) {
         var id = nb.id || nb.notebook_id || "";
-        var title = nb.title || "Untitled";
+        var title = nb.title || "Untitled Notebook";
         var active = state.selectedNotebook === id ? " active" : "";
         var meta = nb.source_count != null ? nb.source_count + " sources" : "";
         return '<div class="notebook-item' + active + '" data-id="' + escapeAttr(id) + '">' +
@@ -694,10 +1221,6 @@
     }
 
     window.NBLM = { downloadArtifact: downloadArtifact };
-
-    if (state.apiUrl) {
-      testConnection();
-    }
   })();
   </script>
 </body>
