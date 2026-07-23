@@ -607,6 +607,7 @@
     function renderDetail(tab, itemId) {
       var items = state.tabData[tab] || [];
       var items2 = items[tab] || items.artifacts || items.sources || items.notes || items.research_runs || items;
+      if (!Array.isArray(items2)) items2 = [];
       var item = items2.find(function(i) {
         var id = i.id || i.source_id || i.artifact_id || i.note_id || i.run_id || i.task_id || "";
         return id === itemId;
@@ -648,7 +649,7 @@
         el.paneDetail.innerHTML = '<div class="detail-card"><h3>Generation Started</h3>' +
           '<div class="field"><span class="field-label">Type:</span> <span class="field-value">' + escapeHtml(kind) + "</span></div>" +
           '<div class="field"><span class="field-label">Task ID:</span> <span class="field-value">' + escapeHtml(data.task_id || data.id || "") + "</span></div>" +
-          '<div class="field"><span class="field-label">Status:</span> <span class="field-value">Pending - poll the Artifacts tab to check progress.</span></div>" +
+          '<div class="field"><span class="field-label">Status:</span> <span class="field-value">Pending - poll the Artifacts tab to check progress.</span></div>' +
           "</div>";
         setTimeout(function() { loadTabData("artifacts"); }, 2000);
       }).catch(function(err) {
