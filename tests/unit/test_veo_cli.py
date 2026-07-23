@@ -83,9 +83,7 @@ def test_extract_video_uri_supports_rest_operation_shape() -> None:
         "done": True,
         "response": {
             "generateVideoResponse": {
-                "generatedSamples": [
-                    {"video": {"uri": "https://example.test/generated.mp4"}}
-                ]
+                "generatedSamples": [{"video": {"uri": "https://example.test/generated.mp4"}}]
             }
         },
     }
@@ -95,6 +93,4 @@ def test_extract_video_uri_supports_rest_operation_shape() -> None:
 
 def test_extract_video_uri_surfaces_api_error() -> None:
     with pytest.raises(click.ClickException, match="blocked by policy"):
-        _extract_video_uri(
-            {"done": True, "error": {"message": "blocked by policy"}}
-        )
+        _extract_video_uri({"done": True, "error": {"message": "blocked by policy"}})

@@ -49,9 +49,7 @@ def _inline_image(path: Path) -> dict[str, Any]:
         raise click.ClickException(f"Image file not found: {path}")
     mime_type, _ = mimetypes.guess_type(path.name)
     if mime_type not in {"image/jpeg", "image/png", "image/webp"}:
-        raise click.ClickException(
-            f"Unsupported image type for {path}. Use PNG, JPEG, or WebP."
-        )
+        raise click.ClickException(f"Unsupported image type for {path}. Use PNG, JPEG, or WebP.")
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
     return {"inlineData": {"mimeType": mime_type, "data": encoded}}
 
@@ -103,9 +101,7 @@ def _validate_controls(
     if last_frame and not first_frame:
         raise click.ClickException("--last-frame requires --first-frame.")
     if (references or resolution in {"1080p", "4k"}) and duration != 8:
-        raise click.ClickException(
-            "Reference images and 1080p/4k generation require --duration 8."
-        )
+        raise click.ClickException("Reference images and 1080p/4k generation require --duration 8.")
     image_guided = bool(references or first_frame or last_frame)
     if image_guided and person_generation == "allow_all":
         raise click.ClickException(
@@ -131,8 +127,7 @@ def _build_payload(
     instance: dict[str, Any] = {"prompt": prompt}
     if references:
         instance["referenceImages"] = [
-            {"image": _inline_image(path), "referenceType": "asset"}
-            for path in references
+            {"image": _inline_image(path), "referenceType": "asset"} for path in references
         ]
     if first_frame:
         instance["image"] = _inline_image(first_frame)
@@ -194,9 +189,7 @@ def _request_json(response: httpx.Response, *, action: str) -> dict[str, Any]:
     try:
         payload = response.json()
     except ValueError as exc:
-        raise click.ClickException(
-            f"Gemini API {action} returned invalid JSON."
-        ) from exc
+        raise click.ClickException(f"Gemini API {action} returned invalid JSON.") from exc
     if not isinstance(payload, dict):
         raise click.ClickException(f"Gemini API {action} returned an unexpected response.")
     return payload
@@ -222,9 +215,7 @@ def _generate(
         )
         operation_name = kickoff.get("name")
         if not operation_name:
-            raise click.ClickException(
-                "Gemini API did not return a long-running operation name."
-            )
+            raise click.ClickException("Gemini API did not return a long-running operation name.")
 
         click.echo(f"Started Veo operation: {operation_name}")
         operation: dict[str, Any] = kickoff
@@ -268,10 +259,18 @@ def _generate(
     type=click.Path(path_type=Path, exists=True, dir_okay=False),
     help="Read the complete Veo prompt from a UTF-8 text file.",
 )
-@click.option("--model", type=click.Choice(_SUPPORTED_MODELS), default=_DEFAULT_MODEL, show_default=True)
-@click.option("--aspect-ratio", type=click.Choice(["16:9", "9:16"]), default="16:9", show_default=True)
-@click.option("--duration", type=int, default=8, show_default=True, help="Clip duration: 4, 6, or 8 seconds.")
-@click.option("--resolution", type=click.Choice(["720p", "1080p", "4k"]), default="720p", show_default=True)
+@click.option(
+    "--model", type=click.Choice(_SUPPORTED_MODELS), default=_DEFAULT_MODEL, show_default=True
+)
+@click.option(
+    "--aspect-ratio", type=click.Choice(["16:9", "9:16"]), default="16:9", show_default=True
+)
+@click.option(
+    "--duration", type=int, default=8, show_default=True, help="Clip duration: 4, 6, or 8 seconds."
+)
+@click.option(
+    "--resolution", type=click.Choice(["720p", "1080p", "4k"]), default="720p", show_default=True
+)
 @click.option(
     "--person-generation",
     type=click.Choice(["auto", "allow_all", "allow_adult"]),
@@ -284,7 +283,9 @@ def _generate(
 @click.option("--lens", help="Focus or lens direction, such as shallow focus or 50mm lens.")
 @click.option("--ambiance", help="Lighting and color direction.")
 @click.option("--negative-prompt", help="Elements Veo should avoid, subject to API support.")
-@click.option("--seed", type=int, help="Optional Veo seed; improves similarity but is not deterministic.")
+@click.option(
+    "--seed", type=int, help="Optional Veo seed; improves similarity but is not deterministic."
+)
 @click.option("--enhance-prompt/--no-enhance-prompt", default=True, show_default=True)
 @click.option(
     "--reference-image",
@@ -303,7 +304,12 @@ def _generate(
     type=click.Path(path_type=Path, exists=True, dir_okay=False),
     help="Image used as the last frame; requires --first-frame.",
 )
-@click.option("--output", type=click.Path(path_type=Path, dir_okay=False), default=Path("veo-output.mp4"), show_default=True)
+@click.option(
+    "--output",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=Path("veo-output.mp4"),
+    show_default=True,
+)
 @click.option("--timeout", type=click.FloatRange(min=1.0), default=900.0, show_default=True)
 @click.option("--poll-interval", type=click.FloatRange(min=1.0), default=10.0, show_default=True)
 @click.option(
