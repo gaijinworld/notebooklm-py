@@ -3,14 +3,15 @@
 # Set location to NotebookLM-py repo
 Set-Location 'C:\src\notebooklm-py'
 
-# Deploy index.html + runtime-contract.json to LocalWP plugin
+# Deploy index.html + notebooklm-py.php + runtime-contract.json to LocalWP plugin
 $pluginPath = 'C:\Users\jgoka\Local Sites\gaijinworld-local\app\public\wp-content\plugins\notebooklm-py'
 
 # Ensure target plugin directory exists
 New-Item -ItemType Directory -Path $pluginPath -Force | Out-Null
 
-# Copy fresh index.html and runtime-contract.json
+# Copy fresh index.html, notebooklm-py.php, and runtime-contract.json
 Copy-Item -Force "C:\src\notebooklm-py\index.html" "$pluginPath\index.html"
+Copy-Item -Force "C:\src\notebooklm-py\notebooklm-py.php" "$pluginPath\notebooklm-py.php"
 Copy-Item -Force "C:\src\notebooklm-py\runtime-contract.json" "$pluginPath\runtime-contract.json"
 
 # Verify deployment via PHP CLI
@@ -31,7 +32,6 @@ curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 $response = curl_exec($ch);
 $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
 echo "HTTP Code: $httpCode\n";
 preg_match('/<title>(.*?)<\/title>/', $response, $titleMatch);
 echo "Title: " . ($titleMatch[1] ?? 'N/A') . "\n";
@@ -46,7 +46,7 @@ Set-Content -Path $verifyPath -Value $verifyScript -Encoding UTF8
 # Git commit and push
 Set-Location 'C:\src\notebooklm-py'
 git add -A
-git commit -m "chore: bump visibleVersion to 2026.07.23.19 - deploy to LocalWP"
+git commit -m "chore: add notebooklm-py.php plugin router and deploy to LocalWP"
 git push origin main
 
 # Confirm live site in browser
