@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NotebookLM Py
  * Description: WordPress-hosted NotebookLM-py application.
- * Version: 2026.07.23.19
+ * Version: 2026.07.23.21
  * Author: GaijinWorld
  * Requires PHP: 8.0
  */
