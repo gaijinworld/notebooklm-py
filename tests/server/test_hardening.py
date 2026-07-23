@@ -574,3 +574,40 @@ class TestPendingRegistryBounded:
         assert ("nb", "x") not in reg._order
         reg.record("nb", "x")
         assert list(reg._order).count(("nb", "x")) == 1
+
+
+class TestCORSMiddleware:
+    """Regression tests for the CORS middleware added in PR #7.
+
+    The SPA at the LocalWP origin needs ``Access-Control-Allow-Origin`` on
+    both preflight OPTIONS and actual GET responses to call the REST API.
+    """
+
+    def test_preflight_returns_cors_headers(self, app: Any) -> None:
+        from fastapi.testclient import TestClient
+
+        headers = {
+            "Authorization": f"Bearer {TEST_TOKEN}",
+            "Host": "127.0.0.1",
+            "Origin": "https://example.com",
+            "Access-Control-Request-Method": "GET",
+        }
+        with TestClient(
+            app, headers=headers, client=("127.0.0.1", 5555), raise_server_exceptions=False
+        ) as c:
+            resp = c.options("/v1/notebooks")
+        assert resp.headers.get("access-control-allow-origin") == "*"
+
+    def test_get_response_includes_cors_header(self, app: Any) -> None:
+        from fastapi.testclient import TestClient
+
+        headers = {
+            "Authorization": f"Bearer {TEST_TOKEN}",
+            "Host": "127.0.0.1",
+            "Origin": "https://example.com",
+        }
+        with TestClient(
+            app, headers=headers, client=("127.0.0.1", 5555), raise_server_exceptions=False
+        ) as c:
+            resp = c.get("/v1/notebooks")
+        assert resp.headers.get("access-control-allow-origin") == "*"
