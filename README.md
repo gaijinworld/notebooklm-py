@@ -312,6 +312,40 @@ asyncio.run(main())
 - **[Changelog](CHANGELOG.md)** - Version history and release notes
 - **[Security](SECURITY.md)** - Security policy and credential handling
 
+## Recent Changes
+
+Latest commits from `main`, newest first. Full history: [CHANGELOG.md](CHANGELOG.md).
+
+### 2026-07-23
+
+- **feat: add controlled Veo renderer for NotebookLM-authored shots** — Merge PR #1 (`7693484`). Experimental controlled Veo renderer that turns NotebookLM-authored shots into video.
+- **test: cover controlled Veo payload helpers** (`8a0601a`) — Unit tests for the controlled Veo payload helpers.
+- **docs: explain controlled NotebookLM to Veo workflow** (`69ebc54`) — Documentation for the controlled NotebookLM-to-Veo workflow.
+- **feat: add experimental controlled Veo renderer** (`3770880`) — Initial experimental controlled Veo renderer implementation.
+
+### 2026-07-18
+
+- **fix(meta): mark unset output_language as the account default in server_info (#1994)** (`45fd425`) — Adds `output_language_is_default` boolean so an unset language reads as "uses default" rather than "missing".
+- **chore(changelog): fold #1982 + #1987 Unreleased entries into [0.8.0] (#1993)** (`8f3cd95`) — Moves Unreleased changelog entries into the [0.8.0] section.
+- **chore: release v0.8.0rc1 (#1992)** (`570e7dc`) — Pre-release: deployment-scoped MCP OAuth client registry + source_add title support.
+- **fix(deploy): bake git commit into from-source image so server_info reports provenance (#1990)** (`d67081c`) — Docker from-source builds now carry the git commit hash for server_info provenance.
+
+### 2026-07-16
+
+- **test(e2e): stop interactive mind-map leak on post-create rate-limit skip (#1943)** (`50df65d`) — Guaranteed teardown sweep prevents interactive mind-map orphaning on post-create throttle skips.
+- **refactor(mcp): fold studio_get_prompt into studio_list (#1945)** (`e031dbd`) — Consolidates `studio_get_prompt` into `studio_list` (34 → 33 MCP tools).
+- **feat(mcp): record a sha256 completion record for uploaded files (#1944)** (`fccf888`) — Upload route computes and records SHA-256 of received bytes; callers can verify integrity.
+- **deps: bump ruff from 0.15.20 to 0.15.21 (#1866)** (`b5e6ed0`) — Dev dependency update.
+- **docs(sources): correct "native import can't ingest PDF" framing (#1949)** (`0f7e56e`) — Fixes inaccurate PDF ingestion framing across three sibling surfaces.
+- **docs(mcp): sharpen the source_add_drive_file tool docstring (#1947)** (`76be894`) — Clarifies probe/route behavior and the three-way Drive/upload decision.
+- **feat(mcp): emit report_progress keepalives during await_upload's poll (#1946)** (`7ca747f`) — MCP `await_upload` fires liveness progress notifications during polling.
+
+### 2026-07-15
+
+- **feat(mcp): multi-file upload in the in-app widget (#1894)** (`a91bfc6`) — Upload widget supports adding multiple files at once via a token pool.
+- **fix(sources): classify upstream upload HTTP errors instead of leaking httpx (#1895)** (`757ea17`) — Upload HTTP errors surface as clean `NotebookLMError` subclasses instead of opaque 500s.
+- **fix(mcp): render the upload widget on ChatGPT's first call (#1893)** (`604c6a2`) — Widget polls `toolOutput` until the upload URL lands, fixing first-call render on ChatGPT.
+
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
