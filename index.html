@@ -1092,7 +1092,7 @@
     function renderTabList(tab, data) {
       var items = data[tab] || data.artifacts || data.sources || data.notes || data.research_runs || [];
       if (!items.length) {
-        el.tabContent.innerHTML = '<div class="empty-state"><p>No ' + tab + " found.</p></div>';
+        el.tabContent.innerHTML = '<div class="empty-state"><p>No ' + escapeHtml(tab) + ' found.</p></div>';
         return;
       }
       var html = items.map(function(item) {
