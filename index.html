@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NotebookLM-py v2026.07.23.17 Live</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --fg: #e6edf3;
+      --accent: #58a6ff;
+      --border: #30363d;
+      --card: #161b22;
+      --green: #3fb950;
+      --mono: "SF Mono", "Cascadia Code", "Fira Code", Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem 1rem;
+    }
+    .container { max-width: 880px; width: 100%; }
+    header { text-align: center; margin-bottom: 2.5rem; }
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #a371f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 0.5rem;
+    }
+    .version-badge {
+      display: inline-block;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.35rem 1rem;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      color: var(--green);
+    }
+    .version-badge::before {
+      content: "\2022";
+      margin-right: 0.4rem;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .subtitle { color: #8b949e; margin-top: 0.75rem; font-size: 1.1rem; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+      color: var(--accent);
+    }
+    .card p { line-height: 1.6; color: #8b949e; margin-bottom: 0.75rem; }
+    .card p strong { color: var(--fg); }
+    .code-block {
+      background: #010409;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      overflow-x: auto;
+      line-height: 1.5;
+      color: #8b949e;
+    }
+    .code-block .key { color: #79c0ff; }
+    .code-block .val { color: #a5d6ff; }
+    .code-block .str { color: #a5d6ff; }
+    .features { list-style: none; }
+    .features li {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .features li:last-child { border-bottom: none; }
+    .features li::before { content: "\2713"; color: var(--green); font-weight: bold; }
+    .links { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .links a {
+      color: var(--accent);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      transition: border-color 0.2s;
+    }
+    .links a:hover { border-color: var(--accent); }
+    footer {
+      text-align: center;
+      margin-top: 2rem;
+      color: #6e7681;
+      font-size: 0.85rem;
+    }
+    .runtime-config { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>NotebookLM-py</h1>
+      <div class="version-badge">v2026.07.23.17 Live</div>
+      <p class="subtitle">Unofficial Python library &amp; CLI for automating Google NotebookLM</p>
+    </header>
+
+    <div class="card">
+      <h2>Runtime Config</h2>
+      <p>Embedded deployment metadata for the live site:</p>
+      <pre class="code-block" id="runtimeConfig">{
+  <span class="key">"visibleVersion"</span>: <span class="str">"2026.07.23.17"</span>,
+  <span class="key">"packageVersion"</span>: <span class="str">"0.8.0rc1"</span>,
+  <span class="key">"deployedAt"</span>: <span class="str">"2026-07-23T17:00:00+09:00"</span>,
+  <span class="key">"commit"</span>: <span class="str">"da43948b"</span>,
+  <span class="key">"site"</span>: <span class="str">"https://gaijinworld-local.local/notebooklm-py"</span>
+}</pre>
+    </div>
+
+    <div class="card">
+      <h2>Features</h2>
+      <ul class="features">
+        <li>Async client with typed APIs for sources, artifacts, notes, chat &amp; research</li>
+        <li>CLI with Click — source, notebook, artifact, label, research commands</li>
+        <li>MCP server adapter (opt-in) for Claude / ChatGPT integration</li>
+        <li>REST API server adapter (opt-in) for HTTP automation</li>
+        <li>Experimental controlled Veo renderer for NotebookLM-authored shots</li>
+        <li>Browser-cookie auth fallback for headless environments</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>Quick Start</h2>
+      <p><strong>Install:</strong></p>
+      <pre class="code-block">pip install "notebooklm-py[browser]"</pre>
+      <p><strong>Login:</strong></p>
+      <pre class="code-block">notebooklm login</pre>
+      <p><strong>List notebooks:</strong></p>
+      <pre class="code-block">notebooklm notebook list</pre>
+    </div>
+
+    <div class="card">
+      <h2>Links</h2>
+      <div class="links">
+        <a href="https://github.com/gaijinworld/notebooklm-py">GitHub Repository</a>
+        <a href="https://github.com/gaijinworld/notebooklm-py/blob/main/README.md">Documentation</a>
+        <a href="https://github.com/gaijinworld/notebooklm-py/blob/main/CHANGELOG.md">Changelog</a>
+        <a href="https://pypi.org/project/notebooklm-py/">PyPI</a>
+      </div>
+    </div>
+
+    <footer>
+      <p>Deployed from commit <code>da43948b</code> on 2026-07-23</p>
+    </footer>
+  </div>
+
+  <script type="application/json" id="runtimeConfigJson">
+  {
+    "visibleVersion": "2026.07.23.17",
+    "packageVersion": "0.8.0rc1",
+    "deployedAt": "2026-07-23T17:00:00+09:00",
+    "commit": "da43948b",
+    "site": "https://gaijinworld-local.local/notebooklm-py"
+  }
+  </script>
+</body>
+</html>
