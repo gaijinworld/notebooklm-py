@@ -10,7 +10,7 @@ import {
   sendPasswordResetEmail,
   type User,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, googleProvider } from '../firebase';
 
 interface AuthContextValue {
@@ -59,13 +59,17 @@ async function syncFirestoreArtifact(user: User): Promise<void> {
       projectId: 'gamified-network-engineer-app',
       projectNumber: '465331311664',
       parentOrg: 'gaijinworld.com',
-      connectedUser: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || user.email,
-        photoURL: user.photoURL || null
-      },
-      updatedAt: new Date().toISOString()
+      lastUser: user.email || user.uid,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    const userRef = doc(db, 'artifacts', 'notebooklm-py', 'users', user.uid);
+    await setDoc(userRef, {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName || user.email,
+      photoURL: user.photoURL || null,
+      signedInAt: serverTimestamp()
     }, { merge: true });
   } catch (err) {
     console.warn('Failed to sync Firestore artifact:', err);
