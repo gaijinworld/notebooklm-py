@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/firebase.ts","./src/main.tsx","./src/auth/authcontext.tsx","./src/auth/authgate.tsx","./src/auth/loginpage.tsx","./src/components/header.tsx","./src/components/notebooklist.tsx","./src/components/settingspanel.tsx","./src/components/tabbar.tsx","./src/components/tabcontent.tsx"],"version":"5.9.3"}

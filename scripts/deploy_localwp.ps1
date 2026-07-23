@@ -1,15 +1,25 @@
-# Build / Refresh & Deploy Script for NotebookLM-py
+# Build / Refresh & Deploy Script for NotebookLM-py React 19 SPA
 
 # Set location to NotebookLM-py repo
 Set-Location 'C:\src\notebooklm-py'
 
-# Deploy index.html + notebooklm-py.php + runtime-contract.json to LocalWP plugin
+# Build Vite React 19 Frontend
+Write-Host "Building Vite React 19 Frontend..." -ForegroundColor Green
+npm install
+npm run build
+
+# Deploy assets to LocalWP plugin
 $pluginPath = 'C:\Users\jgoka\Local Sites\gaijinworld-local\app\public\wp-content\plugins\notebooklm-py'
 
 # Ensure target plugin directory exists
 New-Item -ItemType Directory -Path $pluginPath -Force | Out-Null
 
-# Copy fresh index.html, notebooklm-py.php, and runtime-contract.json
+# Copy dist build output
+Remove-Item -Recurse -Force "$pluginPath\dist" -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Path "$pluginPath\dist" -Force | Out-Null
+Copy-Item -Recurse -Force "C:\src\notebooklm-py\dist\*" "$pluginPath\dist\"
+
+# Copy index.html, notebooklm-py.php, and runtime-contract.json
 Copy-Item -Force "C:\src\notebooklm-py\index.html" "$pluginPath\index.html"
 Copy-Item -Force "C:\src\notebooklm-py\notebooklm-py.php" "$pluginPath\notebooklm-py.php"
 Copy-Item -Force "C:\src\notebooklm-py\runtime-contract.json" "$pluginPath\runtime-contract.json"
@@ -35,9 +45,7 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 echo "HTTP Code: $httpCode\n";
 preg_match('/<title>(.*?)<\/title>/', $response, $titleMatch);
 echo "Title: " . ($titleMatch[1] ?? 'N/A') . "\n";
-preg_match('/"visibleVersion"\s*:\s*"([^"]+)"/', $response, $versionMatch);
-echo "visibleVersion: " . ($versionMatch[1] ?? 'NOT FOUND') . "\n";
-echo "runtimeConfigJson present: " . (strpos($response, 'runtimeConfigJson') !== false ? 'YES' : 'NO') . "\n";
+echo "Vite SPA Script present: " . (strpos($response, '/src/main.tsx') !== false || strpos($response, 'assets/') !== false ? 'YES' : 'NO') . "\n";
 '@
 $verifyPath = Join-Path $env:TEMP 'nblm_verify.php'
 Set-Content -Path $verifyPath -Value $verifyScript -Encoding UTF8
@@ -46,7 +54,7 @@ Set-Content -Path $verifyPath -Value $verifyScript -Encoding UTF8
 # Git commit and push
 Set-Location 'C:\src\notebooklm-py'
 git add -A
-git commit -m "chore: add notebooklm-py.php plugin router and deploy to LocalWP"
+git commit -m "feat(web): transform notebooklm-py to React 19 + Vite SPA with Firebase Auth"
 git push origin main
 
 # Confirm live site in browser

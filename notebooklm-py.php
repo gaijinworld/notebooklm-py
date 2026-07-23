@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: NotebookLM Py
- * Description: WordPress-hosted NotebookLM-py application.
+ * Description: WordPress-hosted NotebookLM-py React 19 + Vite SPA Application.
  * Version: 2026.07.23.21
  * Author: GaijinWorld
  * Requires PHP: 8.0
@@ -19,7 +19,10 @@ add_action('template_redirect', function() {
         header('Cache-Control: no-cache, no-store, must-revalidate');
         header('Pragma: no-cache');
         header('Expires: 0');
-        readfile(__DIR__ . '/index.html');
+        
+        $dist_index = __DIR__ . '/dist/index.html';
+        $file_to_serve = file_exists($dist_index) ? $dist_index : __DIR__ . '/index.html';
+        readfile($file_to_serve);
         exit;
     }
 }, 0);

@@ -9,6 +9,7 @@ venv/
 coverage.json
 htmlcov/
 dist/
+node_modules/
 build/
 *.egg-info/
 .DS_Store
