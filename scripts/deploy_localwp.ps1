@@ -1,26 +1,26 @@
-# Build / Refresh & Deploy Script for NotebookLM-py React 19 SPA
+# Build / Refresh & Deploy Script for NotebookLM-py (React 19 + Vite SPA in web/)
 
-# Set location to NotebookLM-py repo
-Set-Location 'C:\src\notebooklm-py'
+# Set location to NotebookLM-py web subfolder
+Set-Location 'C:\src\notebooklm-py\web'
 
-# Build Vite React 19 Frontend
-Write-Host "Building Vite React 19 Frontend..." -ForegroundColor Green
+# Build Vite React 19 SPA
+Write-Host "Building Vite React 19 SPA from web/ directory..." -ForegroundColor Green
 npm install
 npm run build
 
-# Deploy assets to LocalWP plugin
+# Deploy compiled dist + plugin loader + contract to LocalWP
 $pluginPath = 'C:\Users\jgoka\Local Sites\gaijinworld-local\app\public\wp-content\plugins\notebooklm-py'
 
 # Ensure target plugin directory exists
 New-Item -ItemType Directory -Path $pluginPath -Force | Out-Null
 
-# Copy dist build output
+# Copy fresh dist build output
 Remove-Item -Recurse -Force "$pluginPath\dist" -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Path "$pluginPath\dist" -Force | Out-Null
-Copy-Item -Recurse -Force "C:\src\notebooklm-py\dist\*" "$pluginPath\dist\"
+Copy-Item -Recurse -Force "C:\src\notebooklm-py\web\dist\*" "$pluginPath\dist\"
 
-# Copy index.html, notebooklm-py.php, and runtime-contract.json
-Copy-Item -Force "C:\src\notebooklm-py\index.html" "$pluginPath\index.html"
+# Copy root index.html, notebooklm-py.php, and runtime-contract.json
+Copy-Item -Force "C:\src\notebooklm-py\web\index.html" "$pluginPath\index.html"
 Copy-Item -Force "C:\src\notebooklm-py\notebooklm-py.php" "$pluginPath\notebooklm-py.php"
 Copy-Item -Force "C:\src\notebooklm-py\runtime-contract.json" "$pluginPath\runtime-contract.json"
 
@@ -45,16 +45,16 @@ $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
 echo "HTTP Code: $httpCode\n";
 preg_match('/<title>(.*?)<\/title>/', $response, $titleMatch);
 echo "Title: " . ($titleMatch[1] ?? 'N/A') . "\n";
-echo "Vite SPA Script present: " . (strpos($response, '/src/main.tsx') !== false || strpos($response, 'assets/') !== false ? 'YES' : 'NO') . "\n";
+echo "Vite Assets present: " . (strpos($response, 'dist/assets/') !== false ? 'YES' : 'NO') . "\n";
 '@
 $verifyPath = Join-Path $env:TEMP 'nblm_verify.php'
 Set-Content -Path $verifyPath -Value $verifyScript -Encoding UTF8
 & $phpExe -c $iniPath $verifyPath
 
-# Git commit and push
+# Git commit and push from repo root
 Set-Location 'C:\src\notebooklm-py'
 git add -A
-git commit -m "feat(web): transform notebooklm-py to React 19 + Vite SPA with Firebase Auth"
+git commit -m "refactor(web): clean up React 19 Vite SPA into web/ subfolder with dist base asset routing"
 git push origin main
 
 # Confirm live site in browser

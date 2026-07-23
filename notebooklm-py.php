@@ -21,6 +21,9 @@ add_action('template_redirect', function() {
         header('Expires: 0');
         
         $dist_index = __DIR__ . '/dist/index.html';
+        if (!file_exists($dist_index)) {
+            $dist_index = __DIR__ . '/web/dist/index.html';
+        }
         $file_to_serve = file_exists($dist_index) ? $dist_index : __DIR__ . '/index.html';
         readfile($file_to_serve);
         exit;

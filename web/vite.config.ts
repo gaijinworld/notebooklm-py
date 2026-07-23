@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
-  base: './',
+  base: '/wp-content/plugins/notebooklm-py/dist/',
   build: {
     manifest: true,
     outDir: 'dist',
