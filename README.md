@@ -318,6 +318,8 @@ Latest commits from `main`, newest first. Full history: [CHANGELOG.md](CHANGELOG
 
 ### 2026-07-23
 
+- **feat: replace static landing page with interactive NotebookLM browser (#6)** — Interactive SPA that browses notebooks, sources, artifacts, notes, and research via the REST API. Adds CORS middleware to the server.
+- **chore: add web landing page v2026.07.23.17 + deploy to LocalWP (#5)** (`74c2b3b`) — Initial static landing page with visibleVersion 2026.07.23.17 and runtime-contract.json.
 - **docs(architecture): document veo_cli.py in module map and public surface list (#4)** (`da43948`) — Adds veo_cli.py to the Repository Structure tree and public modules list in docs/architecture.md.
 - **style: collapse ruff-format violations in veo_cli and tests (#3)** (`b872040`) — Fixes ruff-format pre-commit failures in veo_cli.py and test_veo_cli.py.
 - **docs(readme): add Recent Changes section with latest commits in descending date (#2)** (`87a46b1`) — Adds a Recent Changes section to README.md with the latest 18 commits grouped by date.

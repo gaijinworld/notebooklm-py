@@ -33,6 +33,7 @@ from typing import cast
 
 from fastapi import APIRouter, Depends, FastAPI, Request, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
+from starlette.middleware.cors import CORSMiddleware
 
 from ..client import NotebookLMClient
 from ..exceptions import AuthError, NotebookLMError
@@ -355,6 +356,16 @@ def create_app(
         docs_url=None,
         redoc_url=None,
         openapi_url=None,
+    )
+
+    # Allow the browser SPA (e.g. the LocalWP landing page) to call the REST
+    # API. The server is loopback-gated by default; external bind requires
+    # NOTEBOOKLM_SERVER_ALLOW_EXTERNAL_BIND=1 + a bearer token.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     install_exception_handlers(app)
