@@ -74,12 +74,15 @@ final class NBLM_Plugin {
 
     private function get_runtime_config(): array {
         $request_scheme = is_ssl() ? 'https' : 'http';
+        $http_host = $_SERVER['HTTP_HOST'] ?? 'gaijinworld-local.local';
+        $base_url = $request_scheme . '://' . $http_host;
+
         return [
             'visibleVersion' => NBLM_PLUGIN_VERSION,
-            'routeBase' => esc_url_raw(set_url_scheme(home_url('/notebooklm-py/'), $request_scheme)),
-            'siteOrigin' => esc_url_raw(set_url_scheme(home_url('/'), $request_scheme)),
-            'restBaseUrl' => esc_url_raw(set_url_scheme(rest_url('notebooklm-py/v1/'), $request_scheme)),
-            'runtimeContractUrl' => esc_url_raw(NBLM_PLUGIN_URL . 'runtime-contract.json'),
+            'routeBase' => esc_url_raw($base_url . '/notebooklm-py/'),
+            'siteOrigin' => esc_url_raw($base_url . '/'),
+            'restBaseUrl' => esc_url_raw(rest_url('notebooklm-py/v1/')),
+            'runtimeContractUrl' => esc_url_raw('/wp-content/plugins/notebooklm-py/runtime-contract.json'),
             'firebaseWebConfig' => [
                 'apiKey' => 'AIzaSyAr5oe2DNaYQseh2iYPvBucZvibKyqNLOc',
                 'authDomain' => 'gamified-network-engineer-app.firebaseapp.com',
@@ -102,7 +105,7 @@ final class NBLM_Plugin {
 
         if ($entry !== null) {
             foreach ($entry['css'] as $css_file) {
-                $style_url = add_query_arg('ver', NBLM_PLUGIN_VERSION, NBLM_PLUGIN_URL . 'dist/' . $css_file);
+                $style_url = add_query_arg('ver', NBLM_PLUGIN_VERSION, '/wp-content/plugins/notebooklm-py/dist/' . $css_file);
                 $tags[] = sprintf('<link rel="stylesheet" href="%s">', esc_url($style_url));
             }
         }
@@ -113,7 +116,7 @@ final class NBLM_Plugin {
         );
 
         if ($entry !== null) {
-            $tags[] = sprintf('<script type="module" src="%s"></script>', esc_url(NBLM_PLUGIN_URL . 'dist/' . $entry['file']));
+            $tags[] = sprintf('<script type="module" src="%s"></script>', esc_url('/wp-content/plugins/notebooklm-py/dist/' . $entry['file']));
         }
 
         return implode('', $tags);
