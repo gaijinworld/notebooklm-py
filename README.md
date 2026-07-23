@@ -318,6 +318,9 @@ Latest commits from `main`, newest first. Full history: [CHANGELOG.md](CHANGELOG
 
 ### 2026-07-23
 
+- **docs(architecture): document veo_cli.py in module map and public surface list (#4)** (`da43948`) — Adds veo_cli.py to the Repository Structure tree and public modules list in docs/architecture.md.
+- **style: collapse ruff-format violations in veo_cli and tests (#3)** (`b872040`) — Fixes ruff-format pre-commit failures in veo_cli.py and test_veo_cli.py.
+- **docs(readme): add Recent Changes section with latest commits in descending date (#2)** (`87a46b1`) — Adds a Recent Changes section to README.md with the latest 18 commits grouped by date.
 - **feat: add controlled Veo renderer for NotebookLM-authored shots** — Merge PR #1 (`7693484`). Experimental controlled Veo renderer that turns NotebookLM-authored shots into video.
 - **test: cover controlled Veo payload helpers** (`8a0601a`) — Unit tests for the controlled Veo payload helpers.
 - **docs: explain controlled NotebookLM to Veo workflow** (`69ebc54`) — Documentation for the controlled NotebookLM-to-Veo workflow.
