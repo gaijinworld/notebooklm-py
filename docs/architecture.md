@@ -827,7 +827,7 @@ A fuller taxonomy can be generated with
 `notebooklm-py` keeps a small set of public-named modules (`artifacts.py`,
 `auth.py`, `client.py`, `config.py`, `exceptions.py`, `io.py`, `log.py`,
 `migration.py`, `notebooklm_cli.py`, `paths.py`, `research.py`,
-`types.py`, `urls.py`, `utils.py`) and routes everything else through
+`types.py`, `urls.py`, `utils.py`, `veo_cli.py`) and routes everything else through
 underscore-prefixed seam modules. Anything underscored is *not* a
 supported import surface; it can be moved, renamed, or deleted without a
 deprecation cycle. See [ADR-0012](./adr/0012-implementation-surface-convention.md).
@@ -1186,6 +1186,7 @@ src/notebooklm/
 ├── _settings.py                 # SettingsAPI
 ├── _labels.py                   # LabelsAPI — client.labels (source labels: generate/create/list/…)
 ├── notebooklm_cli.py            # Entry-point assembler — imports + registers cli/ groups
+├── veo_cli.py                   # Experimental controlled Veo renderer CLI — calls Gemini API Veo endpoint directly
 ├── mcp/                         # MCP server (opt-in `mcp` extra) — transport-neutral adapter over _app/, sibling to cli/
 │   ├── __init__.py              # Re-exports create_server / SERVER_NAME / SERVER_INSTRUCTIONS
 │   ├── __main__.py              # `notebooklm-mcp` entrypoint: argparse (--profile/--transport/--host/--port/--log-level), stderr logging, loopback HTTP bind guard + fail-closed auth guard (non-loopback bind requires a bearer token AND/OR self-hosted OAuth); composes the auth provider (build_auth) and passes it to create_server on the http path
