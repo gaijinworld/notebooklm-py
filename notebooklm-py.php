@@ -44,10 +44,12 @@ final class NBLM_Plugin {
 
     public function handle_start_server(WP_REST_Request $request): WP_REST_Response {
         $params = json_decode((string)$request->get_body(), true) ?: [];
-        $profile = sanitize_text_field($params['profile'] ?? 'default');
-        $token = sanitize_text_field($params['token'] ?? 'mysecrettoken');
+        $profile = $params['profile'] ?? 'default';
+        $token = $params['token'] ?? 'mysecrettoken';
 
-        $user_home = getenv('USERPROFILE') ?: getenv('HOME') ?: 'C:\Users\jgoka';
+        // LocalWP PHP runs as SYSTEM — USERPROFILE is C:\Windows\system32.
+        // Hardcode the actual user home; allow override via env for other setups.
+        $user_home = getenv('NOTEBOOKLM_HOME_OVERRIDE') ?: 'C:\Users\jgoka';
         // Use RAW profile name — notebooklm Python does NOT sanitize the directory name
         $storage_file = $user_home . '\.notebooklm\profiles\\' . $profile . '\storage_state.json';
         $log_file = $user_home . '\.notebooklm\server-bridge.log';
@@ -69,6 +71,7 @@ final class NBLM_Plugin {
                 'status' => 'auth_required',
                 'profile' => $profile,
                 'storage_exists' => false,
+                'storage_path' => $storage_file,
                 'python' => $python_exe,
                 'message' => "No authenticated session for $profile. Run: $python_exe -m notebooklm --profile \"$profile\" login --browser msedge"
             ], 200);

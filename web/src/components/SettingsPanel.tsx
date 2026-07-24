@@ -28,7 +28,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 }) => {
   const { user } = useAuth();
   const userEmail = user?.email || 'default';
-  const profileName = userEmail.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const profileName = userEmail;
 
   const [copiedCmd1, setCopiedCmd1] = useState(false);
   const [copiedCmd2, setCopiedCmd2] = useState(false);
@@ -38,12 +38,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const getTimeString = () => new Date().toLocaleTimeString();
 
   const [logs, setLogs] = useState<LogItem[]>([
-    { time: getTimeString(), type: 'info', text: `PROFILE BINDING`, status: `Bound to signed-in user: ${userEmail}` },
-    { time: getTimeString(), type: 'cmd', text: 'uv pip install -e ".[server]"', status: 'Requires active venv in repo' },
-    { time: getTimeString(), type: 'success', text: 'python -m pip install --user -e ".[server,browser]"', status: 'Installed fastapi, uvicorn, playwright' },
-    { time: getTimeString(), type: 'success', text: 'python -m playwright install chromium', status: 'Playwright Chromium ready' },
-    { time: getTimeString(), type: 'success', text: `python -m notebooklm --profile "${userEmail}" login --browser msedge`, status: `AUTHENTICATED: ${userEmail}` },
-    { time: getTimeString(), type: 'verify', text: `python -m notebooklm --profile "${userEmail}" auth check --test --json`, status: 'STATUS: OK (token_fetch: true)' }
+    { time: getTimeString(), type: 'info', text: `PROFILE BINDING`, status: `Bound to signed-in user: ${userEmail}` }
   ]);
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -137,6 +132,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       if (data.status === 'auth_required') {
         addLog('error', 'AUTH REQUIRED', data.message);
+        if (data.storage_path) addLog('info', 'STORAGE PATH', `Checked: ${data.storage_path}`);
         addLog('cmd', 'RUN LOGIN', `${data.python || 'python'} -m notebooklm --profile "${userEmail}" login --browser msedge`);
         setStartingServer(false);
         return;
@@ -149,11 +145,19 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
 
     // Aggressive retry: poll healthz every 2s for up to 30s (15 attempts)
+    const healthUrl = apiUrl.replace(/\/+$/, '') + '/healthz';
     for (let i = 0; i < 15; i++) {
       await new Promise(r => setTimeout(r, 2000));
-      await checkServerHealth();
-      // checkServerHealth updates healthStatus async, so we need to check after
-      // We use a small delay to let the state update propagate
+      try {
+        const res = await fetch(healthUrl, { method: 'GET' });
+        if (res.ok) {
+          addLog('info', `GET ${healthUrl}`, '200 OK — server is online!');
+          checkServerHealth();
+          break;
+        }
+      } catch {
+        addLog('error', `GET ${healthUrl}`, 'ERR_CONNECTION_REFUSED');
+      }
     }
     setStartingServer(false);
   };
