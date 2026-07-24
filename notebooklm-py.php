@@ -48,29 +48,43 @@ final class NBLM_Plugin {
         $token = sanitize_text_field($params['token'] ?? 'mysecrettoken');
 
         $user_home = getenv('USERPROFILE') ?: getenv('HOME') ?: 'C:\Users\jgoka';
-        $profile_dir_name = preg_replace('/[^a-zA-Z0-9._-]/', '_', $profile);
-        $storage_file = $user_home . '\.notebooklm\profiles\\' . $profile_dir_name . '\storage_state.json';
+        // Use RAW profile name — notebooklm Python does NOT sanitize the directory name
+        $storage_file = $user_home . '\.notebooklm\profiles\\' . $profile . '\storage_state.json';
+        $log_file = $user_home . '\.notebooklm\server-bridge.log';
 
-        $python_exe = 'C:\Python314\python.exe';
-        if (!file_exists($python_exe)) {
-            $python_exe = 'python';
+        // Find Python executable — try common install paths, then fallback to PATH
+        $python_exe = 'python';
+        $candidates = ['C:\Python314\python.exe', 'C:\Python313\python.exe', 'C:\Python312\python.exe', 'C:\Python311\python.exe'];
+        foreach ($candidates as $c) {
+            if (file_exists($c)) {
+                $python_exe = $c;
+                break;
+            }
+        }
+
+        // If no authenticated session exists, return auth_required — do NOT try
+        // to run login --fresh in the background (it needs a Playwright browser window)
+        if (!file_exists($storage_file)) {
+            return new WP_REST_Response([
+                'status' => 'auth_required',
+                'profile' => $profile,
+                'storage_exists' => false,
+                'python' => $python_exe,
+                'message' => "No authenticated session for $profile. Run: $python_exe -m notebooklm --profile \"$profile\" login --browser msedge"
+            ], 200);
         }
 
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            if (!file_exists($storage_file)) {
-                $cmd = sprintf(
-                    'start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& %s -m notebooklm --profile %s login --fresh&& %s -m notebooklm.server"',
-                    $profile, $token, $python_exe, $profile, $python_exe
-                );
-            } else {
-                $cmd = sprintf(
-                    'start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& %s -m notebooklm.server"',
-                    $profile, $token, $python_exe
-                );
-            }
+            $cmd = sprintf(
+                'start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& %s -m notebooklm.server 2>"%s""',
+                escapeshellarg($profile), escapeshellarg($token), escapeshellarg($python_exe), escapeshellarg($log_file)
+            );
             pclose(popen($cmd, "r"));
         } else {
-            $cmd = sprintf('NOTEBOOKLM_PROFILE=%s NOTEBOOKLM_SERVER_TOKEN=%s python -m notebooklm.server > /dev/null 2>&1 &', escapeshellarg($profile), escapeshellarg($token));
+            $cmd = sprintf(
+                'NOTEBOOKLM_PROFILE=%s NOTEBOOKLM_SERVER_TOKEN=%s %s -m notebooklm.server > /dev/null 2>%s &',
+                escapeshellarg($profile), escapeshellarg($token), escapeshellarg($python_exe), escapeshellarg($log_file)
+            );
             exec($cmd);
         }
 
@@ -78,8 +92,10 @@ final class NBLM_Plugin {
             'status' => 'started',
             'profile' => $profile,
             'token' => $token,
-            'storage_exists' => file_exists($storage_file),
-            'message' => "notebooklm-server automatically initialized and launched for $profile"
+            'storage_exists' => true,
+            'python' => $python_exe,
+            'log_file' => $log_file,
+            'message' => "notebooklm-server launched for $profile"
         ], 200);
     }
 
