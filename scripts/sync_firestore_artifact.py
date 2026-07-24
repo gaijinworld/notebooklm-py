@@ -6,9 +6,8 @@ Parent Org: gaijinworld.com
 """
 
 import json
-import urllib.request
 import urllib.error
-import sys
+import urllib.request
 
 PROJECT_ID = "gamified-network-engineer-app"
 FIRESTORE_URL = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/(default)/documents/artifacts/notebooklm-py"
@@ -23,18 +22,16 @@ ARTIFACT_PAYLOAD = {
         "projectId": {"stringValue": PROJECT_ID},
         "projectNumber": {"stringValue": "465331311664"},
         "parentOrg": {"stringValue": "gaijinworld.com"},
-        "updatedAt": {"timestampValue": "2026-07-23T20:43:00Z"}
+        "updatedAt": {"timestampValue": "2026-07-23T20:43:00Z"},
     }
 }
+
 
 def main():
     print(f"Syncing notebooklm-py artifact to Firestore project: {PROJECT_ID}...")
     data = json.dumps(ARTIFACT_PAYLOAD).encode("utf-8")
     req = urllib.request.Request(
-        FIRESTORE_URL,
-        data=data,
-        headers={"Content-Type": "application/json"},
-        method="PATCH"
+        FIRESTORE_URL, data=data, headers={"Content-Type": "application/json"}, method="PATCH"
     )
     try:
         with urllib.request.urlopen(req) as resp:
@@ -45,6 +42,7 @@ def main():
         print(f"HTTP response {e.code}: {e.read().decode('utf-8')}")
     except Exception as e:
         print(f"Sync notice: {e}")
+
 
 if __name__ == "__main__":
     main()
