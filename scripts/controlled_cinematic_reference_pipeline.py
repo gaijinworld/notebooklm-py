@@ -27,7 +27,12 @@ from notebooklm._cinematic_reference import (
     normalize_reference_storyboard,
     scene_reference_paths,
 )
-from notebooklm.veo_cli import _DEFAULT_MODEL, _SUPPORTED_MODELS, _generate
+from notebooklm.veo_cli import (
+    _DEFAULT_MODEL,
+    _SUPPORTED_MODELS,
+    _extract_video_uri,
+    _generate,
+)
 
 _REFERENCE_STORYBOARD_SHAPE = {
     "title": "string",
@@ -177,7 +182,6 @@ async def _render_scenes(
     model: str,
     aspect_ratio: str,
     resolution: str,
-    person_generation: str,
     subject_references: dict[str, tuple[Path, ...]],
     asset_root: Path,
     include_audio_cues: bool,
@@ -198,7 +202,7 @@ async def _render_scenes(
 
     clips: list[Path] = []
     plans: list[dict[str, Any]] = []
-    full_video_by_scene: dict[str, Path] = {}
+    video_uri_by_scene: dict[str, str] = {}
 
     for scene in storyboard["scenes"]:
         index = int(scene["index"])
@@ -210,39 +214,43 @@ async def _render_scenes(
             if mode == "extension"
             else clip_path
         )
+        operation_path = operations_dir / f"scene-{index:03d}.json"
 
         references = scene_reference_paths(scene, subject_references)
         first_frame = _resolve_asset(scene.get("first_frame"), asset_root=asset_root)
         last_frame = _resolve_asset(scene.get("last_frame"), asset_root=asset_root)
-        extension_video = None
+        extension_video_uri = None
         if mode == "extension":
             parent_id = str(scene.get("extend_from_scene") or "").strip()
             if not parent_id:
                 raise base.PipelineError(
                     f"Scene {scene_id} is extension mode but has no extend_from_scene."
                 )
-            extension_video = full_video_by_scene.get(parent_id)
-            if extension_video is None:
+            extension_video_uri = video_uri_by_scene.get(parent_id)
+            if extension_video_uri is None:
                 raise base.PipelineError(
-                    f"Scene {scene_id} extends {parent_id}, which has not been rendered earlier."
+                    f"Scene {scene_id} extends {parent_id}, but its transient Veo video URI "
+                    "is unavailable. Preserve the operation JSON and rerun within the "
+                    "provider retention window."
                 )
 
         if resume and clip_path.is_file() and clip_path.stat().st_size > 0:
             if mode != "extension" or raw_output.is_file():
                 click.echo(f"Reusing scene {scene_id}: {clip_path}", err=True)
                 clips.append(clip_path)
-                full_video_by_scene[scene_id] = raw_output
+                if operation_path.is_file():
+                    operation = json.loads(operation_path.read_text(encoding="utf-8"))
+                    video_uri_by_scene[scene_id] = _extract_video_uri(operation)
                 continue
 
         payload, request_summary = build_scene_payload(
             scene,
             aspect_ratio=aspect_ratio,
             resolution=resolution,
-            person_generation=person_generation,
             references=references,
             first_frame=first_frame,
             last_frame=last_frame,
-            extension_video=extension_video,
+            extension_video_uri=extension_video_uri,
             enhance_prompt=enhance_prompt,
             seed=None if seed is None else seed + index,
             include_audio_cues=include_audio_cues,
@@ -263,8 +271,10 @@ async def _render_scenes(
             output=raw_output,
             timeout=timeout,
             poll_interval=poll_interval,
-            save_operation=operations_dir / f"scene-{index:03d}.json",
+            save_operation=operation_path,
         )
+        operation = json.loads(operation_path.read_text(encoding="utf-8"))
+        video_uri_by_scene[scene_id] = _extract_video_uri(operation)
         if mode == "extension":
             await asyncio.to_thread(
                 _trim_extension_tail,
@@ -274,7 +284,6 @@ async def _render_scenes(
                 ffprobe=ffprobe,
             )
         clips.append(clip_path)
-        full_video_by_scene[scene_id] = raw_output
 
     return clips, plans
 
@@ -290,7 +299,6 @@ async def _run(
     model: str,
     aspect_ratio: str,
     resolution: str,
-    person_generation: str,
     subject_reference_values: tuple[str, ...],
     confirm_authorized_adult: bool,
     storyboard_file: Path | None,
@@ -441,7 +449,6 @@ async def _run(
         model=model,
         aspect_ratio=aspect_ratio,
         resolution=resolution,
-        person_generation=person_generation,
         subject_references=subject_references,
         asset_root=root,
         include_audio_cues=include_audio_cues,
@@ -502,11 +509,6 @@ async def _run(
 @click.option("--aspect-ratio", type=click.Choice(["16:9", "9:16"]), default="16:9")
 @click.option("--resolution", type=click.Choice(["720p", "1080p", "4k"]), default="720p")
 @click.option(
-    "--person-generation",
-    type=click.Choice(["auto", "allow_all", "allow_adult"]),
-    default="auto",
-)
-@click.option(
     "--subject-reference",
     "subject_reference_values",
     multiple=True,
@@ -560,7 +562,6 @@ def main(
     model: str,
     aspect_ratio: str,
     resolution: str,
-    person_generation: str,
     subject_reference_values: tuple[str, ...],
     confirm_authorized_adult: bool,
     storyboard_file: Path | None,
@@ -595,7 +596,6 @@ def main(
                 model=model,
                 aspect_ratio=aspect_ratio,
                 resolution=resolution,
-                person_generation=person_generation,
                 subject_reference_values=subject_reference_values,
                 confirm_authorized_adult=confirm_authorized_adult,
                 storyboard_file=storyboard_file,
