@@ -179,6 +179,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOutUser = useCallback(async () => {
     setError(null);
     setNotice(null);
+    localStorage.clear();
+    sessionStorage.clear();
     await signOut(auth);
   }, []);
 
