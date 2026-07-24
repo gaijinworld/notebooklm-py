@@ -59,7 +59,7 @@ final class NBLM_Plugin {
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             if (!file_exists($storage_file)) {
                 $cmd = sprintf(
-                    'start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& %s -m notebooklm --profile %s login --browser msedge&& %s -m notebooklm.server"',
+                    'start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& %s -m notebooklm --profile %s login --fresh&& %s -m notebooklm.server"',
                     $profile, $token, $python_exe, $profile, $python_exe
                 );
             } else {

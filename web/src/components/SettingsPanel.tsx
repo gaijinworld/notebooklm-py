@@ -108,7 +108,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
   }, [logs]);
 
-  const authCmd = `python -m notebooklm --profile "${userEmail}" login --browser msedge`;
+  const authCmd = `python -m notebooklm --profile "${userEmail}" login --fresh`;
   const serverCmd = `$env:NOTEBOOKLM_PROFILE="${userEmail}"; $env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server`;
 
   const copyCmd1 = () => {
