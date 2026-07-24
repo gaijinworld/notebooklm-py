@@ -182,7 +182,9 @@ def _storyboard_question(
     language: str,
     extra_instructions: str | None,
 ) -> str:
-    extra = f"\nAdditional project instructions:\n{extra_instructions}\n" if extra_instructions else ""
+    extra = (
+        f"\nAdditional project instructions:\n{extra_instructions}\n" if extra_instructions else ""
+    )
     return f"""
 Create a source-grounded cinematic scene plan about: {topic}
 
@@ -215,7 +217,11 @@ def _narration_instructions(
         f"{scene['index']}. {scene['title']}: {scene['narration']}"
         for scene in storyboard["scenes"]
     )
-    extra = f"\nAdditional narration instructions:\n{extra_instructions}\n" if extra_instructions else ""
+    extra = (
+        f"\nAdditional narration instructions:\n{extra_instructions}\n"
+        if extra_instructions
+        else ""
+    )
     return f"""
 Create a source-grounded Audio Overview about: {topic}
 
@@ -318,8 +324,7 @@ def _require_binary(value: str, display_name: str) -> str:
 def _run_process(command: list[str], *, label: str) -> subprocess.CompletedProcess[str]:
     completed = subprocess.run(
         command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        capture_output=True,
         text=True,
         encoding="utf-8",
         errors="replace",
@@ -450,11 +455,7 @@ def _assemble_final_video(
     repeat_count = max(1, math.ceil(audio_duration / sequence_duration))
 
     concat_path = workspace / "concat.txt"
-    concat_lines = [
-        _concat_file_line(clip)
-        for _ in range(repeat_count)
-        for clip in normalized
-    ]
+    concat_lines = [_concat_file_line(clip) for _ in range(repeat_count) for clip in normalized]
     concat_path.write_text("\n".join(concat_lines) + "\n", encoding="utf-8")
 
     silent_video = workspace / "assembled-silent.mp4"
@@ -780,9 +781,15 @@ async def _run_pipeline(
 @click.option("--language", default="en", show_default=True)
 @click.option("--scene-count", type=click.IntRange(1, 60), default=12, show_default=True)
 @click.option("--duration", type=click.Choice(["4", "6", "8"]), default="8", show_default=True)
-@click.option("--model", type=click.Choice(_SUPPORTED_MODELS), default=_DEFAULT_MODEL, show_default=True)
-@click.option("--aspect-ratio", type=click.Choice(["16:9", "9:16"]), default="16:9", show_default=True)
-@click.option("--resolution", type=click.Choice(["720p", "1080p", "4k"]), default="1080p", show_default=True)
+@click.option(
+    "--model", type=click.Choice(_SUPPORTED_MODELS), default=_DEFAULT_MODEL, show_default=True
+)
+@click.option(
+    "--aspect-ratio", type=click.Choice(["16:9", "9:16"]), default="16:9", show_default=True
+)
+@click.option(
+    "--resolution", type=click.Choice(["720p", "1080p", "4k"]), default="1080p", show_default=True
+)
 @click.option(
     "--person-generation",
     type=click.Choice(["allow_all", "allow_adult"]),
