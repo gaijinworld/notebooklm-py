@@ -110,7 +110,7 @@ export const TabContent: React.FC<TabContentProps> = ({
             </p>
             <p className="sub-text">If the server is not running, start it with:</p>
             <p className="code-block-p">
-              <code>notebooklm-server --token YOUR_TOKEN</code>
+              <code>$env:NOTEBOOKLM_SERVER_TOKEN="mysecrettoken"; notebooklm-server</code>
             </p>
             <div className="welcome-links">
               <a href="https://github.com/gaijinworld/notebooklm-py" target="_blank" rel="noreferrer">
