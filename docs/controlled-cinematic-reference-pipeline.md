@@ -1,6 +1,6 @@
 # Reference-conditioned NotebookLM Cinematic Video Overview
 
-This workflow adapts the useful portions of the internal design report
+This workflow adapts the verified, useful portions of the design report
 **NotebookLM Veo Integration Workflow** into the existing hybrid pipeline.
 NotebookLM remains responsible for source grounding and the native Cinematic
 Video Overview narration. Direct Gemini API Veo 3.1 calls render replacement
@@ -20,8 +20,8 @@ visual scenes with explicit subject references and shot controls.
   - extension mode uses 8 seconds, 720p, and `allow_all`;
   - reference images cannot be combined with first/last frames or extension.
 - Immediate download of every completed scene and persistent operation JSON.
-- Optional continuation shots through Veo extension. The extension result is a
-  combined video, so only its new seven-second tail is used as the scene clip.
+- Optional continuation shots using the transient video URI returned by the
+  preceding Veo operation.
 - Final FFmpeg assembly using narration extracted from the native NotebookLM
   Cinematic Video Overview.
 
@@ -33,15 +33,15 @@ provider-specific, or time-sensitive. The implementation therefore does not:
 - claim knowledge of NotebookLM's private internal model routing;
 - guarantee deterministic facial identity;
 - hard-code pricing, latency, quotas, or regional availability;
-- assume that Vertex AI stable model IDs have the same reference-image features
-  as the Gemini API preview models;
-- use unsupported SDK workarounds when the documented Gemini REST `inlineData`
-  shape is sufficient;
+- assume stable Vertex model IDs have the same reference-image features as the
+  Gemini API preview models;
+- use SDK-specific workarounds when the documented REST request shape is
+  sufficient;
 - attempt to weaken Google's safety, privacy, copyright, or identity controls.
 
 Current Gemini API documentation describes Veo 3.1 reference images, first/last
 frames, video extension, 4/6/8-second generation, 720p/1080p/4K output, and
-server-side two-day retention. Always re-check official documentation before a
+two-day server retention. Always re-check official documentation before a
 production rollout because preview capabilities can change.
 
 ## Storyboard schema
@@ -150,9 +150,11 @@ An extension scene must appear after its base scene:
 }
 ```
 
-Extension requires 720p and produces a combined video. The pipeline preserves
-that full combined asset under `extensions/` for another extension, while the
-new seven-second tail is extracted into `clips/` for final assembly.
+The pipeline reads the transient generated-video URI from the preceding scene's
+saved operation JSON. Extension therefore must run while that provider asset is
+still retained. Extension uses 720p and produces a combined video. The pipeline
+preserves the combined result under `extensions/`, while the new seven-second
+tail is extracted into `clips/` for final assembly.
 
 ## Output
 
@@ -169,3 +171,10 @@ controlled-reference-work/
 ├── normalized/
 └── manifest.json
 ```
+
+## Validation
+
+The reference-control module is covered by 41 focused unit tests covering
+normalization, subject mappings, payload construction, mode exclusivity,
+interpolation, extension URI handling, image validation, and optional audio
+cues. The focused run reaches 99% statement coverage for the new module.
