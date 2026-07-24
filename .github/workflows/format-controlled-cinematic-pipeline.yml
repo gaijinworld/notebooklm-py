@@ -1,8 +1,8 @@
 name: Format controlled cinematic pipeline
 
 on:
-  push:
-    branches: [feature/controlled-cinematic-pipeline]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
