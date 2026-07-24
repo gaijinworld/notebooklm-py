@@ -51,11 +51,22 @@ final class NBLM_Plugin {
         $profile_dir_name = preg_replace('/[^a-zA-Z0-9._-]/', '_', $profile);
         $storage_file = $user_home . '\.notebooklm\profiles\\' . $profile_dir_name . '\storage_state.json';
 
+        $python_exe = 'C:\Python314\python.exe';
+        if (!file_exists($python_exe)) {
+            $python_exe = 'python';
+        }
+
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
             if (!file_exists($storage_file)) {
-                $cmd = sprintf('start /b cmd /c "python -m notebooklm --profile "%s" login --browser msedge && set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& python -m notebooklm.server"', $profile, $profile, $token);
+                $cmd = sprintf(
+                    'start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& %s -m notebooklm --profile %s login --browser msedge&& %s -m notebooklm.server"',
+                    $profile, $token, $python_exe, $profile, $python_exe
+                );
             } else {
-                $cmd = sprintf('start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& python -m notebooklm.server"', $profile, $token);
+                $cmd = sprintf(
+                    'start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& %s -m notebooklm.server"',
+                    $profile, $token, $python_exe
+                );
             }
             pclose(popen($cmd, "r"));
         } else {
