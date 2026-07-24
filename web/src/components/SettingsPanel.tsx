@@ -39,10 +39,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   const commandLogs = [
     { type: 'cmd', text: 'uv pip install -e ".[server]"', status: 'Requires active venv in repo' },
-    { type: 'success', text: 'python -m pip install --user -e ".[server]"', status: 'SUCCESS: Installed fastapi 0.139.2, uvicorn 0.34.0' },
-    { type: 'verify', text: 'python -m notebooklm auth check --json', status: 'STATUS: ERROR - storage_state.json not found' },
-    { type: 'error', text: 'FileNotFoundError', status: 'C:\\Users\\jgoka\\.notebooklm\\profiles\\default\\storage_state.json missing' },
-    { type: 'action', text: 'REQUIRED ACTION', status: 'Run "python -m notebooklm login" in PowerShell to sign in to Google once' },
+    { type: 'success', text: 'python -m pip install --user -e ".[server,browser]"', status: 'SUCCESS: Installed fastapi 0.139.2, uvicorn 0.34.0, playwright 1.61.0' },
+    { type: 'success', text: 'python -m playwright install chromium', status: 'SUCCESS: Playwright Chromium browser installed and ready' },
+    { type: 'verify', text: 'python -m notebooklm auth check --json', status: 'STATUS: Pending Google login (storage_state.json)' },
+    { type: 'action', text: 'READY FOR LOGIN', status: 'Run "python -m notebooklm login" in PowerShell to sign in once' },
     { type: 'info', text: `GET ${apiUrl}/healthz`, status: connStatus ? connStatus.text : 'Awaiting connection test...' }
   ];
 
