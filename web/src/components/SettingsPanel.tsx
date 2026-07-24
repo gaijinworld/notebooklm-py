@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Terminal, Copy, Check, Server, ShieldAlert, ShieldCheck, RefreshCw, HelpCircle, ArrowRight, Activity, Trash2 } from 'lucide-react';
+import { Terminal, Copy, Check, Server, ShieldAlert, ShieldCheck, RefreshCw, HelpCircle, ArrowRight, Activity, Trash2, UserCheck } from 'lucide-react';
+import { useAuth } from '../auth/AuthContext';
 
 interface SettingsPanelProps {
   apiUrl: string;
@@ -25,6 +26,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onTestConnection,
   connStatus
 }) => {
+  const { user } = useAuth();
+  const userEmail = user?.email || 'default';
+  const profileName = userEmail.replace(/[^a-zA-Z0-9._-]/g, '_');
+
   const [copiedCmd1, setCopiedCmd1] = useState(false);
   const [copiedCmd2, setCopiedCmd2] = useState(false);
   const [activeTab, setActiveTab] = useState<'config' | 'log'>('config');
@@ -32,11 +37,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const getTimeString = () => new Date().toLocaleTimeString();
 
   const [logs, setLogs] = useState<LogItem[]>([
+    { time: getTimeString(), type: 'info', text: `PROFILE BINDING`, status: `Bound to signed-in user: ${userEmail}` },
     { time: getTimeString(), type: 'cmd', text: 'uv pip install -e ".[server]"', status: 'Requires active venv in repo' },
     { time: getTimeString(), type: 'success', text: 'python -m pip install --user -e ".[server,browser]"', status: 'Installed fastapi, uvicorn, playwright' },
-    { time: getTimeString(), type: 'success', text: 'python -m playwright install chromium', status: 'Playwright Chromium ready' },
-    { time: getTimeString(), type: 'success', text: 'python -m notebooklm login --browser msedge', status: 'AUTHENTICATED: dvzerver@gmail.com' },
-    { time: getTimeString(), type: 'verify', text: 'python -m notebooklm auth check --test --json', status: 'STATUS: OK (token_fetch: true)' }
+    { time: getTimeString(), type: 'success', text: `python -m notebooklm --profile "${userEmail}" login --browser msedge`, status: `AUTHENTICATED: ${userEmail}` },
+    { time: getTimeString(), type: 'verify', text: `python -m notebooklm --profile "${userEmail}" auth check --test --json`, status: 'STATUS: OK (token_fetch: true)' }
   ]);
 
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -70,14 +75,13 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
         setHealthStatus({ isOnline: false, checking: false, msg });
         addLog('error', `GET ${healthUrl}`, `HTTP ${res.status}`);
       }
-    } catch (err: any) {
+    } catch {
       const msg = `OFFLINE: Cannot connect to ${apiUrl}. Ensure notebooklm-server is running.`;
       setHealthStatus({ isOnline: false, checking: false, msg });
       addLog('error', `GET ${healthUrl}`, 'ERR_CONNECTION_REFUSED');
     }
   }, [apiUrl, addLog]);
 
-  // Real-time automatic polling every 10 seconds
   useEffect(() => {
     checkServerHealth();
     const interval = setInterval(() => {
@@ -86,7 +90,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     return () => clearInterval(interval);
   }, [checkServerHealth]);
 
-  // Log connection test events
   useEffect(() => {
     if (connStatus) {
       if (connStatus.isError) {
@@ -97,15 +100,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
   }, [connStatus, apiUrl, addLog]);
 
-  // Auto-scroll log viewport to bottom when logs change
   useEffect(() => {
     if (viewportRef.current) {
       viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
     }
   }, [logs]);
 
-  const authCmd = `python -m notebooklm login --browser msedge`;
-  const serverCmd = `$env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server`;
+  // Account-isolated setup commands bound to signed-in user's profile
+  const authCmd = `python -m notebooklm --profile "${userEmail}" login --browser msedge`;
+  const serverCmd = `$env:NOTEBOOKLM_PROFILE="${userEmail}"; $env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server`;
 
   const copyCmd1 = () => {
     navigator.clipboard.writeText(authCmd);
@@ -120,7 +123,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   };
 
   const handleTestConnectionClick = () => {
-    addLog('cmd', `TEST CONNECTION`, `Pinging ${apiUrl}/v1/notebooks...`);
+    addLog('cmd', `TEST CONNECTION [Profile: ${userEmail}]`, `Pinging ${apiUrl}/v1/notebooks...`);
     onTestConnection();
   };
 
@@ -132,7 +135,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           onClick={() => setActiveTab('config')}
         >
           <Server size={14} style={{ marginRight: 5 }} />
-          REST API Connection & Server Monitor
+          REST API Connection & Profile Sync
         </button>
         <button
           className={`settings-tab-btn ${activeTab === 'log' ? 'active' : ''}`}
@@ -145,6 +148,12 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
       {activeTab === 'config' ? (
         <div className="settings-content-body">
+          {/* Active User Account & Profile Binding Indicator */}
+          <div className="user-profile-sync-badge">
+            <UserCheck size={16} color="#3fb950" style={{ marginRight: 6 }} />
+            <span>Active Web Account Profile: <strong>{userEmail}</strong> (NOTEBOOKLM_PROFILE="{profileName}")</span>
+          </div>
+
           {/* Server Health Status Monitor Card */}
           <div className={`server-health-card ${healthStatus.isOnline ? 'online' : 'offline'}`}>
             <div className="health-card-left">
@@ -207,7 +216,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="setup-steps-container">
             <div className="settings-cmd-box">
               <div className="cmd-box-header">
-                <span className="step-badge">Step 1: Authenticate Google Account (One-Time Setup)</span>
+                <span className="step-badge">Step 1: Authenticate Google Account for {userEmail}</span>
                 <button className="btn-copy-cmd" onClick={copyCmd1}>
                   {copiedCmd1 ? <Check size={12} color="#3fb950" /> : <Copy size={12} />}
                   {copiedCmd1 ? 'Copied!' : 'Copy Command'}
@@ -218,7 +227,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             <div className="settings-cmd-box">
               <div className="cmd-box-header">
-                <span className="step-badge">Step 2: Start REST API Server (Keep running in PowerShell)</span>
+                <span className="step-badge">Step 2: Start REST Server for Profile "{userEmail}"</span>
                 <button className="btn-copy-cmd" onClick={copyCmd2}>
                   {copiedCmd2 ? <Check size={12} color="#3fb950" /> : <Copy size={12} />}
                   {copiedCmd2 ? 'Copied!' : 'Copy Command'}
@@ -231,24 +240,24 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="setup-help-guide-card">
             <div className="guide-card-title">
               <HelpCircle size={15} color="#58a6ff" style={{ marginRight: 6 }} />
-              <span>Complete Setup Walkthrough</span>
+              <span>Multi-Account Switch & Setup Walkthrough</span>
             </div>
             <ol className="guide-steps-list">
               <li>
                 <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
-                Open <strong>Windows PowerShell</strong> on your computer.
+                Signing in with <strong>{userEmail}</strong> binds your session to <code>NOTEBOOKLM_PROFILE="{userEmail}"</code>.
               </li>
               <li>
                 <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
-                Run <code>python -m notebooklm login --browser msedge</code>. Sign in once, then close Edge.
+                Run Step 1 in PowerShell to sign into Google for this account. Credentials are stored under <code>~/.notebooklm/profiles/{profileName}/</code>.
               </li>
               <li>
                 <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
-                Run <code>$env:NOTEBOOKLM_SERVER_TOKEN="mysecrettoken"; python -m notebooklm.server</code> to start the server. Keep this terminal open.
+                Run Step 2 in PowerShell to start the REST server bound to profile <code>{userEmail}</code>.
               </li>
               <li>
                 <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
-                Click <strong>Test Connection & Load Notebooks</strong> above to view your notebooks!
+                When you click <strong>Sign Out</strong> and sign in with a <i>different</i> Google account, the commands will automatically switch to that user's profile!
               </li>
             </ol>
           </div>

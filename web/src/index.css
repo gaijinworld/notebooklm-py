@@ -502,6 +502,21 @@ body {
 
 .btn-test-conn:hover { opacity: 0.9; }
 
+.user-profile-sync-badge {
+  display: flex;
+  align-items: center;
+  background: #090d12;
+  border: 1px solid rgba(63, 185, 80, 0.3);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.75rem;
+  font-size: 0.78rem;
+  color: #c9d1d9;
+}
+
+.user-profile-sync-badge strong {
+  color: var(--accent);
+}
+
 .server-health-card {
   display: flex;
   justify-content: space-between;
