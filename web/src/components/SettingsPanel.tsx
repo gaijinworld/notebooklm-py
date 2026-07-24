@@ -42,7 +42,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     { type: 'success', text: 'python -m pip install --user -e ".[server]"', status: 'SUCCESS: Installed fastapi 0.139.2, uvicorn 0.34.0' },
     { type: 'verify', text: 'python -m notebooklm auth check --json', status: 'STATUS: ERROR - storage_state.json not found' },
     { type: 'error', text: 'FileNotFoundError', status: 'C:\\Users\\jgoka\\.notebooklm\\profiles\\default\\storage_state.json missing' },
-    { type: 'action', text: 'REQUIRED ACTION', status: 'Run "notebooklm login" in PowerShell to sign in to Google once' },
+    { type: 'action', text: 'REQUIRED ACTION', status: 'Run "python -m notebooklm login" in PowerShell to sign in to Google once' },
     { type: 'info', text: `GET ${apiUrl}/healthz`, status: connStatus ? connStatus.text : 'Awaiting connection test...' }
   ];
 
