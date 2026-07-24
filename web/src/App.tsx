@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { AuthProvider } from './auth/AuthContext';
 import { AuthGate } from './auth/AuthGate';
+import { useAuth } from './auth/AuthContext';
 import { Header } from './components/Header';
 import { SettingsPanel } from './components/SettingsPanel';
 import { NotebookList, Notebook } from './components/NotebookList';
@@ -8,6 +9,8 @@ import { TabBar, TabType } from './components/TabBar';
 import { TabContent } from './components/TabContent';
 
 export const MainWorkspace: React.FC = () => {
+  const { user } = useAuth();
+  const userEmail = user?.email;
   const [showSettings, setShowSettings] = useState(false);
   const [apiUrl, setApiUrl] = useState(localStorage.getItem('nblm_apiUrl') || 'http://localhost:8000');
   const [apiToken, setApiToken] = useState(localStorage.getItem('nblm_apiToken') || '');
@@ -96,6 +99,26 @@ export const MainWorkspace: React.FC = () => {
       loadTabData(selectedNotebook.id, activeTab);
     }
   }, [selectedNotebook, activeTab, loadTabData]);
+
+  // Automatically initialize & launch REST server for the signed-in user profile
+  useEffect(() => {
+    if (!userEmail) return;
+
+    const autoInitServer = async () => {
+      try {
+        await fetch('/wp-json/notebooklm-py/v1/start-server', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile: userEmail, token: apiToken || 'mysecrettoken' })
+        });
+      } catch {
+        // Ignore if bridge endpoint unavailable
+      }
+      loadNotebooks();
+    };
+
+    autoInitServer();
+  }, [userEmail, loadNotebooks, apiToken]);
 
   const handleGenerate = async (type: string) => {
     if (!selectedNotebook) return;

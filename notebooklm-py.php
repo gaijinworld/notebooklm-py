@@ -47,8 +47,16 @@ final class NBLM_Plugin {
         $profile = sanitize_text_field($params['profile'] ?? 'default');
         $token = sanitize_text_field($params['token'] ?? 'mysecrettoken');
 
+        $user_home = getenv('USERPROFILE') ?: getenv('HOME') ?: 'C:\Users\jgoka';
+        $profile_dir_name = preg_replace('/[^a-zA-Z0-9._-]/', '_', $profile);
+        $storage_file = $user_home . '\.notebooklm\profiles\\' . $profile_dir_name . '\storage_state.json';
+
         if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            $cmd = sprintf('start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& python -m notebooklm.server"', $profile, $token);
+            if (!file_exists($storage_file)) {
+                $cmd = sprintf('start /b cmd /c "python -m notebooklm --profile "%s" login --browser msedge && set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& python -m notebooklm.server"', $profile, $profile, $token);
+            } else {
+                $cmd = sprintf('start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& python -m notebooklm.server"', $profile, $token);
+            }
             pclose(popen($cmd, "r"));
         } else {
             $cmd = sprintf('NOTEBOOKLM_PROFILE=%s NOTEBOOKLM_SERVER_TOKEN=%s python -m notebooklm.server > /dev/null 2>&1 &', escapeshellarg($profile), escapeshellarg($token));
@@ -59,7 +67,8 @@ final class NBLM_Plugin {
             'status' => 'started',
             'profile' => $profile,
             'token' => $token,
-            'message' => "notebooklm-server launching in background for profile $profile"
+            'storage_exists' => file_exists($storage_file),
+            'message' => "notebooklm-server automatically initialized and launched for $profile"
         ], 200);
     }
 
