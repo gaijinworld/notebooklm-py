@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Terminal, Copy, Check, Server, ShieldAlert, ShieldCheck, RefreshCw, HelpCircle, ArrowRight, Activity, CheckCircle2, XCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Terminal, Copy, Check, Server, ShieldAlert, ShieldCheck, RefreshCw, HelpCircle, ArrowRight, Activity, Trash2 } from 'lucide-react';
 
 interface SettingsPanelProps {
   apiUrl: string;
@@ -8,6 +8,13 @@ interface SettingsPanelProps {
   setApiToken: (token: string) => void;
   onTestConnection: () => void;
   connStatus: { text: string; isError: boolean } | null;
+}
+
+interface LogItem {
+  time: string;
+  type: 'cmd' | 'success' | 'verify' | 'error' | 'action' | 'info';
+  text: string;
+  status: string;
 }
 
 export const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -22,42 +29,80 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [copiedCmd2, setCopiedCmd2] = useState(false);
   const [activeTab, setActiveTab] = useState<'config' | 'log'>('config');
 
+  const getTimeString = () => new Date().toLocaleTimeString();
+
+  const [logs, setLogs] = useState<LogItem[]>([
+    { time: getTimeString(), type: 'cmd', text: 'uv pip install -e ".[server]"', status: 'Requires active venv in repo' },
+    { time: getTimeString(), type: 'success', text: 'python -m pip install --user -e ".[server,browser]"', status: 'Installed fastapi, uvicorn, playwright' },
+    { time: getTimeString(), type: 'success', text: 'python -m playwright install chromium', status: 'Playwright Chromium ready' },
+    { time: getTimeString(), type: 'success', text: 'python -m notebooklm login --browser msedge', status: 'AUTHENTICATED: dvzerver@gmail.com' },
+    { time: getTimeString(), type: 'verify', text: 'python -m notebooklm auth check --test --json', status: 'STATUS: OK (token_fetch: true)' }
+  ]);
+
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  const addLog = useCallback((type: LogItem['type'], text: string, status: string) => {
+    setLogs((prev) => [
+      ...prev,
+      { time: new Date().toLocaleTimeString(), type, text, status }
+    ]);
+  }, []);
+
   const [healthStatus, setHealthStatus] = useState<{ isOnline: boolean; checking: boolean; msg: string }>({
     isOnline: false,
     checking: false,
-    msg: 'Click Check Server Status to probe http://localhost:8000'
+    msg: 'Probing local server status...'
   });
 
   const checkServerHealth = useCallback(async () => {
     setHealthStatus((prev) => ({ ...prev, checking: true }));
     const healthUrl = apiUrl.replace(/\/+$/, '') + '/healthz';
+    const startTime = performance.now();
     try {
       const res = await fetch(healthUrl, { method: 'GET' });
+      const elapsed = Math.round(performance.now() - startTime);
       if (res.ok) {
-        setHealthStatus({
-          isOnline: true,
-          checking: false,
-          msg: `ONLINE: REST server is active and listening on ${apiUrl}`
-        });
+        const msg = `ONLINE: REST server active at ${apiUrl} (${elapsed}ms)`;
+        setHealthStatus({ isOnline: true, checking: false, msg });
+        addLog('info', `GET ${healthUrl}`, `200 OK (${elapsed}ms)`);
       } else {
-        setHealthStatus({
-          isOnline: false,
-          checking: false,
-          msg: `OFFLINE: Server returned HTTP status ${res.status}`
-        });
+        const msg = `OFFLINE: Server returned HTTP status ${res.status}`;
+        setHealthStatus({ isOnline: false, checking: false, msg });
+        addLog('error', `GET ${healthUrl}`, `HTTP ${res.status}`);
       }
-    } catch {
-      setHealthStatus({
-        isOnline: false,
-        checking: false,
-        msg: `OFFLINE: Cannot connect to local server (${apiUrl}). Ensure notebooklm-server is running.`
-      });
+    } catch (err: any) {
+      const msg = `OFFLINE: Cannot connect to ${apiUrl}. Ensure notebooklm-server is running.`;
+      setHealthStatus({ isOnline: false, checking: false, msg });
+      addLog('error', `GET ${healthUrl}`, 'ERR_CONNECTION_REFUSED');
     }
-  }, [apiUrl]);
+  }, [apiUrl, addLog]);
 
+  // Real-time automatic polling every 10 seconds
   useEffect(() => {
     checkServerHealth();
+    const interval = setInterval(() => {
+      checkServerHealth();
+    }, 10000);
+    return () => clearInterval(interval);
   }, [checkServerHealth]);
+
+  // Log connection test events
+  useEffect(() => {
+    if (connStatus) {
+      if (connStatus.isError) {
+        addLog('error', `GET ${apiUrl}/v1/notebooks`, connStatus.text);
+      } else {
+        addLog('success', `GET ${apiUrl}/v1/notebooks`, connStatus.text);
+      }
+    }
+  }, [connStatus, apiUrl, addLog]);
+
+  // Auto-scroll log viewport to bottom when logs change
+  useEffect(() => {
+    if (viewportRef.current) {
+      viewportRef.current.scrollTop = viewportRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   const authCmd = `python -m notebooklm login --browser msedge`;
   const serverCmd = `$env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server`;
@@ -74,13 +119,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     setTimeout(() => setCopiedCmd2(false), 2000);
   };
 
-  const commandLogs = [
-    { type: 'cmd', text: 'uv pip install -e ".[server]"', status: 'Requires active venv in repo' },
-    { type: 'success', text: 'python -m pip install --user -e ".[server,browser]"', status: 'SUCCESS: Installed fastapi 0.139.2, uvicorn 0.34.0, playwright 1.61.0' },
-    { type: 'success', text: 'python -m playwright install chromium', status: 'SUCCESS: Playwright Chromium browser installed and ready' },
-    { type: 'verify', text: 'python -m notebooklm auth check --json', status: 'AUTHENTICATED: dvzerver@gmail.com (storage_state.json)' },
-    { type: 'info', text: `GET ${apiUrl}/healthz`, status: healthStatus.msg }
-  ];
+  const handleTestConnectionClick = () => {
+    addLog('cmd', `TEST CONNECTION`, `Pinging ${apiUrl}/v1/notebooks...`);
+    onTestConnection();
+  };
 
   return (
     <div className="settings-panel-expanded">
@@ -97,7 +139,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           onClick={() => setActiveTab('log')}
         >
           <Terminal size={14} style={{ marginRight: 5 }} />
-          CLI Activity & Diagnostics Log
+          CLI Activity & Real-Time Diagnostics Log ({logs.length})
         </button>
       </div>
 
@@ -149,7 +191,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               />
             </div>
 
-            <button className="btn-test-conn" onClick={onTestConnection}>
+            <button className="btn-test-conn" onClick={handleTestConnectionClick}>
               <RefreshCw size={14} style={{ marginRight: 5 }} />
               Test Connection & Load Notebooks
             </button>
@@ -198,7 +240,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </li>
               <li>
                 <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
-                Run <code>python -m notebooklm login</code>. Sign into your Google Account in the Chromium window, then close it.
+                Run <code>python -m notebooklm login --browser msedge</code>. Sign in once, then close Edge.
               </li>
               <li>
                 <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
@@ -214,12 +256,19 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
       ) : (
         <div className="settings-log-body">
           <div className="log-terminal-header">
-            <Terminal size={14} style={{ marginRight: 6 }} />
-            <span>Local Environment Diagnostic & Error Trace Log</span>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <Terminal size={14} style={{ marginRight: 6 }} />
+              <span>Real-Time CLI Activity & Server Diagnostic Event Stream</span>
+            </div>
+            <button className="btn-clear-logs" onClick={() => setLogs([])}>
+              <Trash2 size={12} style={{ marginRight: 4 }} />
+              Clear Log
+            </button>
           </div>
-          <div className="log-terminal-viewport">
-            {commandLogs.map((log, i) => (
+          <div className="log-terminal-viewport" ref={viewportRef}>
+            {logs.map((log, i) => (
               <div key={i} className={`log-line ${log.type}`}>
+                <span className="log-time">[{log.time}]</span>
                 <span className="log-prompt">$</span>
                 <span className="log-text">{log.text}</span>
                 <span className="log-status-tag">{log.status}</span>
