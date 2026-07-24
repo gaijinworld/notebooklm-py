@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/gaijinworld/notebooklm-py/gemini-opal/schemas/storyboard.schema.json",
+  "title": "Controlled Cinematic Storyboard",
+  "type": "object",
+  "required": ["schema_version", "title", "summary", "scenes"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "title": {"type": "string", "minLength": 1},
+    "summary": {"type": "string"},
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "title",
+          "narration",
+          "visual_prompt",
+          "composition",
+          "camera",
+          "lens",
+          "ambiance",
+          "negative_prompt",
+          "duration_seconds"
+        ],
+        "properties": {
+          "title": {"type": "string", "minLength": 1},
+          "narration": {"type": "string"},
+          "visual_prompt": {"type": "string", "minLength": 1},
+          "composition": {"type": "string", "minLength": 1},
+          "camera": {"type": "string", "minLength": 1},
+          "lens": {"type": "string", "minLength": 1},
+          "ambiance": {"type": "string", "minLength": 1},
+          "negative_prompt": {"type": "string"},
+          "duration_seconds": {"enum": [4, 6, 8]}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
