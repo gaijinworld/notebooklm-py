@@ -502,6 +502,78 @@ body {
 
 .btn-test-conn:hover { opacity: 0.9; }
 
+.server-health-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  transition: all 0.2s ease;
+}
+
+.server-health-card.online {
+  background: rgba(63, 185, 80, 0.08);
+  border-color: rgba(63, 185, 80, 0.35);
+}
+
+.server-health-card.offline {
+  background: rgba(248, 81, 73, 0.08);
+  border-color: rgba(248, 81, 73, 0.35);
+}
+
+.health-card-left {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.server-health-card.online .health-icon { color: var(--green); }
+.server-health-card.offline .health-icon { color: var(--red); }
+
+.health-info-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.health-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.health-desc {
+  font-size: 0.76rem;
+  color: #8b949e;
+}
+
+.btn-health-check {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.25rem 0.6rem;
+  color: var(--fg);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.btn-health-check:hover {
+  border-color: var(--accent);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
 .conn-status-banner {
   display: flex;
   align-items: center;
