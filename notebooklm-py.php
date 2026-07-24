@@ -31,6 +31,36 @@ final class NBLM_Plugin {
     private function __construct() {
         add_shortcode('notebooklm_py', [$this, 'render_shortcode']);
         add_action('template_redirect', [$this, 'maybe_render_shortcode_only_shell'], 0);
+        add_action('rest_api_init', [$this, 'register_rest_routes']);
+    }
+
+    public function register_rest_routes(): void {
+        register_rest_route('notebooklm-py/v1', '/start-server', [
+            'methods' => 'POST',
+            'callback' => [$this, 'handle_start_server'],
+            'permission_callback' => '__return_true',
+        ]);
+    }
+
+    public function handle_start_server(WP_REST_Request $request): WP_REST_Response {
+        $params = json_decode((string)$request->get_body(), true) ?: [];
+        $profile = sanitize_text_field($params['profile'] ?? 'default');
+        $token = sanitize_text_field($params['token'] ?? 'mysecrettoken');
+
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $cmd = sprintf('start /b cmd /c "set NOTEBOOKLM_PROFILE=%s&& set NOTEBOOKLM_SERVER_TOKEN=%s&& python -m notebooklm.server"', $profile, $token);
+            pclose(popen($cmd, "r"));
+        } else {
+            $cmd = sprintf('NOTEBOOKLM_PROFILE=%s NOTEBOOKLM_SERVER_TOKEN=%s python -m notebooklm.server > /dev/null 2>&1 &', escapeshellarg($profile), escapeshellarg($token));
+            exec($cmd);
+        }
+
+        return new WP_REST_Response([
+            'status' => 'started',
+            'profile' => $profile,
+            'token' => $token,
+            'message' => "notebooklm-server launching in background for profile $profile"
+        ], 200);
     }
 
     public function render_shortcode(): string {

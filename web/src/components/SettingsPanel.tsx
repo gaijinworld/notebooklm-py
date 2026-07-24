@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Terminal, Copy, Check, Server, ShieldAlert, ShieldCheck, RefreshCw, HelpCircle, ArrowRight, Activity, Trash2, UserCheck } from 'lucide-react';
+import { Terminal, Copy, Check, Server, ShieldAlert, ShieldCheck, RefreshCw, HelpCircle, ArrowRight, Activity, Trash2, UserCheck, Play } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 
 interface SettingsPanelProps {
@@ -32,6 +32,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   const [copiedCmd1, setCopiedCmd1] = useState(false);
   const [copiedCmd2, setCopiedCmd2] = useState(false);
+  const [startingServer, setStartingServer] = useState(false);
   const [activeTab, setActiveTab] = useState<'config' | 'log'>('config');
 
   const getTimeString = () => new Date().toLocaleTimeString();
@@ -40,6 +41,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     { time: getTimeString(), type: 'info', text: `PROFILE BINDING`, status: `Bound to signed-in user: ${userEmail}` },
     { time: getTimeString(), type: 'cmd', text: 'uv pip install -e ".[server]"', status: 'Requires active venv in repo' },
     { time: getTimeString(), type: 'success', text: 'python -m pip install --user -e ".[server,browser]"', status: 'Installed fastapi, uvicorn, playwright' },
+    { time: getTimeString(), type: 'success', text: 'python -m playwright install chromium', status: 'Playwright Chromium ready' },
     { time: getTimeString(), type: 'success', text: `python -m notebooklm --profile "${userEmail}" login --browser msedge`, status: `AUTHENTICATED: ${userEmail}` },
     { time: getTimeString(), type: 'verify', text: `python -m notebooklm --profile "${userEmail}" auth check --test --json`, status: 'STATUS: OK (token_fetch: true)' }
   ]);
@@ -106,7 +108,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     }
   }, [logs]);
 
-  // Account-isolated setup commands bound to signed-in user's profile
   const authCmd = `python -m notebooklm --profile "${userEmail}" login --browser msedge`;
   const serverCmd = `$env:NOTEBOOKLM_PROFILE="${userEmail}"; $env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server`;
 
@@ -120,6 +121,29 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     navigator.clipboard.writeText(serverCmd);
     setCopiedCmd2(true);
     setTimeout(() => setCopiedCmd2(false), 2000);
+  };
+
+  const handleStartServer = async () => {
+    setStartingServer(true);
+    navigator.clipboard.writeText(serverCmd);
+    addLog('cmd', 'START SERVER', `Triggering server launch for profile: ${userEmail}...`);
+
+    try {
+      await fetch('/wp-json/notebooklm-py/v1/start-server', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: userEmail, token: apiToken || 'mysecrettoken' })
+      });
+      addLog('success', 'START SERVER BRIDGE', 'Background launch signal sent to local PHP service');
+    } catch {
+      addLog('info', 'START SERVER COPY', 'Command copied to clipboard! Paste into PowerShell to start');
+    }
+
+    setTimeout(() => checkServerHealth(), 1500);
+    setTimeout(() => {
+      checkServerHealth();
+      setStartingServer(false);
+    }, 3500);
   };
 
   const handleTestConnectionClick = () => {
@@ -165,10 +189,16 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
                 <span className="health-desc">{healthStatus.msg}</span>
               </div>
             </div>
-            <button className="btn-health-check" onClick={checkServerHealth} disabled={healthStatus.checking}>
-              <RefreshCw size={13} className={healthStatus.checking ? 'spin' : ''} style={{ marginRight: 4 }} />
-              {healthStatus.checking ? 'Checking...' : 'Check Status'}
-            </button>
+            <div className="health-card-actions">
+              <button className="btn-start-server" onClick={handleStartServer} disabled={startingServer}>
+                <Play size={13} style={{ marginRight: 4 }} />
+                {startingServer ? 'Launching...' : healthStatus.isOnline ? 'Restart Server' : 'Start / Fix Server'}
+              </button>
+              <button className="btn-health-check" onClick={checkServerHealth} disabled={healthStatus.checking}>
+                <RefreshCw size={13} className={healthStatus.checking ? 'spin' : ''} style={{ marginRight: 4 }} />
+                {healthStatus.checking ? 'Checking...' : 'Check Status'}
+              </button>
+            </div>
           </div>
 
           <div className="settings-fields-row">
@@ -249,11 +279,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </li>
               <li>
                 <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
-                Run Step 1 in PowerShell to sign into Google for this account. Credentials are stored under <code>~/.notebooklm/profiles/{profileName}/</code>.
-              </li>
-              <li>
-                <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
-                Run Step 2 in PowerShell to start the REST server bound to profile <code>{userEmail}</code>.
+                Click <strong>Start / Fix Server</strong> above or run Step 1 & Step 2 in PowerShell to start the server.
               </li>
               <li>
                 <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
