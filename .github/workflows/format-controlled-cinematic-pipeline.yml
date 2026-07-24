@@ -5,27 +5,30 @@ on:
     branches: [main]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   format:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+          persist-credentials: true
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - uses: astral-sh/setup-uv@v7
       - name: Install pinned developer tools
         run: uv sync --frozen --extra dev
-      - name: Apply Ruff fixes and formatting
+      - name: Apply and commit Ruff output
         run: |
-          uv run ruff check --fix scripts/controlled_cinematic_pipeline.py || true
+          uv run ruff check --fix --unsafe-fixes scripts/controlled_cinematic_pipeline.py
           uv run ruff format scripts/controlled_cinematic_pipeline.py
-          uv run ruff check scripts/controlled_cinematic_pipeline.py > ruff-report.txt || true
-      - uses: actions/upload-artifact@v4
-        with:
-          name: formatted-controlled-cinematic-pipeline
-          path: |
-            scripts/controlled_cinematic_pipeline.py
-            ruff-report.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/controlled_cinematic_pipeline.py
+          if ! git diff --cached --quiet; then
+            git commit -m "style: format controlled cinematic pipeline"
+            git push origin HEAD:${{ github.head_ref }}
+          fi
