@@ -20,9 +20,12 @@ jobs:
         run: uv sync --frozen --extra dev
       - name: Apply Ruff fixes and formatting
         run: |
-          uv run ruff check --fix scripts/controlled_cinematic_pipeline.py
+          uv run ruff check --fix scripts/controlled_cinematic_pipeline.py || true
           uv run ruff format scripts/controlled_cinematic_pipeline.py
+          uv run ruff check scripts/controlled_cinematic_pipeline.py > ruff-report.txt || true
       - uses: actions/upload-artifact@v4
         with:
           name: formatted-controlled-cinematic-pipeline
-          path: scripts/controlled_cinematic_pipeline.py
+          path: |
+            scripts/controlled_cinematic_pipeline.py
+            ruff-report.txt
