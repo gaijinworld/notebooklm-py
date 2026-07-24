@@ -318,6 +318,7 @@ Latest commits from `main`, newest first. Full history: [CHANGELOG.md](CHANGELOG
 
 ### 2026-07-24
 
+- **fix: remove fake auth logs, fix PHP user_home for LocalWP, fix retry loop (#13)** (`344bc52`) — Removes hardcoded fake "AUTHENTICATED" log entries that misled users, fixes PHP `USERPROFILE` pointing to `C:\Windows\system32` under LocalWP, removes `sanitize_text_field` on profile param, fixes retry loop to break on success, and removes auto-start-server effect on mount.
 - **fix: server start bridge — use raw profile name, return auth_required, add error logging (#12)** (`de74a38`) — Fixes PHP `handle_start_server` that never launched `notebooklm-server` due to profile name sanitization mismatch, impossible background `login --fresh`, and no stderr logging. Now returns `auth_required` with login command, tries multiple Python paths, and logs errors to `~/.notebooklm/server-bridge.log`.
 
 ### 2026-07-23
