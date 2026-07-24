@@ -1,0 +1,28 @@
+name: Format controlled cinematic pipeline
+
+on:
+  push:
+    branches: [feature/controlled-cinematic-pipeline]
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v7
+      - name: Install pinned developer tools
+        run: uv sync --frozen --extra dev
+      - name: Apply Ruff fixes and formatting
+        run: |
+          uv run ruff check --fix scripts/controlled_cinematic_pipeline.py
+          uv run ruff format scripts/controlled_cinematic_pipeline.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: formatted-controlled-cinematic-pipeline
+          path: scripts/controlled_cinematic_pipeline.py
