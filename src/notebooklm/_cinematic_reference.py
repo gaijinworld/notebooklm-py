@@ -15,7 +15,6 @@ from typing import Any, Mapping, Sequence
 
 SUPPORTED_MODES = ("text", "reference", "interpolation", "extension")
 SUPPORTED_IMAGE_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
-SUPPORTED_VIDEO_MIME_TYPES = {"video/mp4"}
 DEFAULT_NEGATIVE_PROMPT = (
     "rear-only view, silhouette, face hidden by hair or props, mask, facial distortion, "
     "blank facial features, extreme crop, text covering the face, defocused primary subject"
@@ -27,8 +26,7 @@ class ReferenceSceneError(ValueError):
 
 
 def _text(value: Any, default: str = "") -> str:
-    resolved = str(value or default).strip()
-    return resolved
+    return str(value or default).strip()
 
 
 def _string_list(value: Any) -> list[str]:
@@ -54,22 +52,25 @@ def normalize_reference_storyboard(
             f"Storyboard has {len(raw_scenes)} scenes; maximum is {maximum_scenes}."
         )
 
-    raw_subjects = payload.get("subjects") or payload.get("source_documents") or []
+    raw_subjects = payload.get("subjects")
+    if raw_subjects is None:
+        raw_subjects = payload.get("source_documents")
+    if raw_subjects is None:
+        raw_subjects = []
+    if not isinstance(raw_subjects, list):
+        raise ReferenceSceneError("subjects must be a JSON array.")
+
     subjects: list[dict[str, Any]] = []
-    if raw_subjects:
-        if not isinstance(raw_subjects, list):
-            raise ReferenceSceneError("subjects must be a JSON array.")
-        for index, subject in enumerate(raw_subjects, start=1):
-            if not isinstance(subject, Mapping):
-                raise ReferenceSceneError(f"Subject {index} must be a JSON object.")
-            subject_id = _text(subject.get("id"), f"subject-{index:03d}")
-            subjects.append(
-                {
-                    "id": subject_id,
-                    "description": _text(subject.get("description") or subject.get("notes")),
-                    "reference_images": _string_list(subject.get("reference_images")),
-                }
-            )
+    for index, subject in enumerate(raw_subjects, start=1):
+        if not isinstance(subject, Mapping):
+            raise ReferenceSceneError(f"Subject {index} must be a JSON object.")
+        subjects.append(
+            {
+                "id": _text(subject.get("id"), f"subject-{index:03d}"),
+                "description": _text(subject.get("description") or subject.get("notes")),
+                "reference_images": _string_list(subject.get("reference_images")),
+            }
+        )
 
     scenes: list[dict[str, Any]] = []
     for index, raw in enumerate(raw_scenes, start=1):
@@ -171,7 +172,7 @@ def build_subject_reference_map(
     resolved: dict[str, list[Path]] = {}
     for subject in storyboard.get("subjects", []):
         subject_id = str(subject["id"])
-        paths = []
+        paths: list[Path] = []
         for raw_path in subject.get("reference_images", []):
             path = Path(raw_path).expanduser()
             if not path.is_absolute():
@@ -204,6 +205,7 @@ def build_subject_reference_map(
 def scene_reference_paths(
     scene: Mapping[str, Any], subject_references: Mapping[str, tuple[Path, ...]]
 ) -> tuple[Path, ...]:
+    """Return the unique references for the scene's subjects."""
     paths: list[Path] = []
     for subject_id in scene.get("subject_ids", []):
         for path in subject_references.get(str(subject_id), ()):
@@ -235,13 +237,13 @@ def build_scene_prompt(scene: Mapping[str, Any], *, include_audio_cues: bool) ->
     return "\n\n".join(part for part in parts if part.strip())
 
 
-def _inline_media(path: Path, supported_mime_types: set[str]) -> dict[str, Any]:
+def _inline_image(path: Path) -> dict[str, Any]:
     if not path.is_file():
-        raise ReferenceSceneError(f"Media file not found: {path}")
+        raise ReferenceSceneError(f"Image file not found: {path}")
     mime_type, _ = mimetypes.guess_type(path.name)
-    if mime_type not in supported_mime_types:
-        expected = ", ".join(sorted(supported_mime_types))
-        raise ReferenceSceneError(f"Unsupported media type for {path}; expected {expected}.")
+    if mime_type not in SUPPORTED_IMAGE_MIME_TYPES:
+        expected = ", ".join(sorted(SUPPORTED_IMAGE_MIME_TYPES))
+        raise ReferenceSceneError(f"Unsupported image type for {path}; expected {expected}.")
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
     return {"inlineData": {"mimeType": mime_type, "data": encoded}}
 
@@ -251,11 +253,10 @@ def validate_scene_mode(
     mode: str,
     duration: int,
     resolution: str,
-    person_generation: str,
     references: Sequence[Path],
     first_frame: Path | None,
     last_frame: Path | None,
-    extension_video: Path | None,
+    extension_video_uri: str | None,
 ) -> tuple[int, str, str]:
     """Validate mutually exclusive Veo modes and return normalized controls."""
     if mode not in SUPPORTED_MODES:
@@ -268,7 +269,7 @@ def validate_scene_mode(
         raise ReferenceSceneError("A last frame requires a first frame.")
 
     if mode == "text":
-        if references or first_frame or last_frame or extension_video:
+        if references or first_frame or last_frame or extension_video_uri:
             raise ReferenceSceneError("Text mode cannot include images or an extension video.")
         if resolution in {"1080p", "4k"}:
             duration = 8
@@ -277,14 +278,14 @@ def validate_scene_mode(
     if mode == "reference":
         if not references:
             raise ReferenceSceneError("Reference mode requires one to three subject images.")
-        if first_frame or last_frame or extension_video:
+        if first_frame or last_frame or extension_video_uri:
             raise ReferenceSceneError(
                 "Reference images cannot be combined with interpolation frames or extension."
             )
         return 8, resolution, "allow_adult"
 
     if mode == "interpolation":
-        if references or extension_video:
+        if references or extension_video_uri:
             raise ReferenceSceneError(
                 "Interpolation cannot be combined with reference images or extension."
             )
@@ -296,8 +297,8 @@ def validate_scene_mode(
         raise ReferenceSceneError(
             "Extension cannot be combined with reference images or interpolation frames."
         )
-    if extension_video is None:
-        raise ReferenceSceneError("Extension mode requires a previous Veo-generated video.")
+    if not extension_video_uri:
+        raise ReferenceSceneError("Extension mode requires a previous Veo operation video URI.")
     return 8, "720p", "allow_all"
 
 
@@ -306,11 +307,10 @@ def build_scene_payload(
     *,
     aspect_ratio: str,
     resolution: str,
-    person_generation: str,
     references: Sequence[Path] = (),
     first_frame: Path | None = None,
     last_frame: Path | None = None,
-    extension_video: Path | None = None,
+    extension_video_uri: str | None = None,
     enhance_prompt: bool = True,
     seed: int | None = None,
     include_audio_cues: bool = False,
@@ -321,11 +321,10 @@ def build_scene_payload(
         mode=mode,
         duration=int(scene["duration_seconds"]),
         resolution=resolution,
-        person_generation=person_generation,
         references=references,
         first_frame=first_frame,
         last_frame=last_frame,
-        extension_video=extension_video,
+        extension_video_uri=extension_video_uri,
     )
 
     instance: dict[str, Any] = {
@@ -333,16 +332,16 @@ def build_scene_payload(
     }
     if mode == "reference":
         instance["referenceImages"] = [
-            {"image": _inline_media(path, SUPPORTED_IMAGE_MIME_TYPES), "referenceType": "asset"}
+            {"image": _inline_image(path), "referenceType": "asset"}
             for path in references
         ]
     elif mode == "interpolation":
         assert first_frame is not None and last_frame is not None
-        instance["image"] = _inline_media(first_frame, SUPPORTED_IMAGE_MIME_TYPES)
-        instance["lastFrame"] = _inline_media(last_frame, SUPPORTED_IMAGE_MIME_TYPES)
+        instance["image"] = _inline_image(first_frame)
+        instance["lastFrame"] = _inline_image(last_frame)
     elif mode == "extension":
-        assert extension_video is not None
-        instance["video"] = _inline_media(extension_video, SUPPORTED_VIDEO_MIME_TYPES)
+        assert extension_video_uri is not None
+        instance["video"] = {"uri": extension_video_uri}
 
     parameters: dict[str, Any] = {
         "aspectRatio": aspect_ratio,
@@ -367,7 +366,7 @@ def build_scene_payload(
         "reference_images": [str(path) for path in references],
         "first_frame": str(first_frame) if first_frame else None,
         "last_frame": str(last_frame) if last_frame else None,
-        "extension_video": str(extension_video) if extension_video else None,
+        "extends_previous_veo_video": bool(extension_video_uri),
         "audio_cues_in_prompt": include_audio_cues,
     }
     return {"instances": [instance], "parameters": parameters}, summary
