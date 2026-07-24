@@ -606,9 +606,21 @@ body {
   color: var(--accent);
 }
 
-.log-line.success .log-status-tag { background: rgba(63, 185, 80, 0.2); color: var(--green); }
-.log-line.verify .log-status-tag { background: rgba(163, 113, 247, 0.2); color: #a371f7; }
-.log-line.cmd .log-status-tag { background: rgba(210, 153, 34, 0.2); color: var(--yellow); }
+.setup-steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.step-badge {
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+
+.log-line.error .log-status-tag { background: rgba(248, 81, 73, 0.2); color: var(--red); }
+.log-line.action .log-status-tag { background: rgba(210, 153, 34, 0.25); color: #e3b341; font-weight: 600; }
 
 
 /* Workspace Layout */

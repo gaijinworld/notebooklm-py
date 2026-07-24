@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Terminal, Copy, Check, Server, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
+import { Terminal, Copy, Check, Server, ShieldAlert, ShieldCheck, AlertCircle, RefreshCw, KeyRound } from 'lucide-react';
 
 interface SettingsPanelProps {
   apiUrl: string;
@@ -18,22 +18,31 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onTestConnection,
   connStatus
 }) => {
-  const [copiedCmd, setCopiedCmd] = useState(false);
+  const [copiedCmd1, setCopiedCmd1] = useState(false);
+  const [copiedCmd2, setCopiedCmd2] = useState(false);
   const [activeTab, setActiveTab] = useState<'config' | 'log'>('config');
 
-  const startupCmd = `$env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server`;
+  const authCmd = `notebooklm login`;
+  const serverCmd = `$env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server`;
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(startupCmd);
-    setCopiedCmd(true);
-    setTimeout(() => setCopiedCmd(false), 2000);
+  const copyCmd1 = () => {
+    navigator.clipboard.writeText(authCmd);
+    setCopiedCmd1(true);
+    setTimeout(() => setCopiedCmd1(false), 2000);
+  };
+
+  const copyCmd2 = () => {
+    navigator.clipboard.writeText(serverCmd);
+    setCopiedCmd2(true);
+    setTimeout(() => setCopiedCmd2(false), 2000);
   };
 
   const commandLogs = [
-    { type: 'cmd', text: 'uv pip install --system -e ".[server]"', status: 'Requires repo venv; fallback to pip --user' },
-    { type: 'cmd', text: '.\\.venv\\Scripts\\pip.exe install -e ".[server]"', status: 'Targeted project virtualenv' },
-    { type: 'success', text: 'python -m pip install --user -e ".[server]"', status: 'SUCCESS: Installed fastapi 0.139.2, uvicorn 0.34.0, watchfiles 1.2.0, websockets 16.1.1' },
-    { type: 'verify', text: 'python -m notebooklm.server --help', status: 'VERIFIED: notebooklm.server CLI entry point active and ready' },
+    { type: 'cmd', text: 'uv pip install -e ".[server]"', status: 'Requires active venv in repo' },
+    { type: 'success', text: 'python -m pip install --user -e ".[server]"', status: 'SUCCESS: Installed fastapi 0.139.2, uvicorn 0.34.0' },
+    { type: 'verify', text: 'python -m notebooklm auth check --json', status: 'STATUS: ERROR - storage_state.json not found' },
+    { type: 'error', text: 'FileNotFoundError', status: 'C:\\Users\\jgoka\\.notebooklm\\profiles\\default\\storage_state.json missing' },
+    { type: 'action', text: 'REQUIRED ACTION', status: 'Run "notebooklm login" in PowerShell to sign in to Google once' },
     { type: 'info', text: `GET ${apiUrl}/healthz`, status: connStatus ? connStatus.text : 'Awaiting connection test...' }
   ];
 
@@ -52,7 +61,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           onClick={() => setActiveTab('log')}
         >
           <Terminal size={14} style={{ marginRight: 5 }} />
-          CLI Activity & Execution Log
+          CLI Activity & Error Diagnostics Log
         </button>
       </div>
 
@@ -95,27 +104,40 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
           {connStatus && (
             <div className={`conn-status-banner ${connStatus.isError ? 'err' : 'ok'}`}>
-              {connStatus.isError ? <AlertCircle size={16} /> : <ShieldCheck size={16} />}
+              {connStatus.isError ? <ShieldAlert size={16} /> : <ShieldCheck size={16} />}
               <span>{connStatus.text}</span>
             </div>
           )}
 
-          <div className="settings-cmd-box">
-            <div className="cmd-box-header">
-              <span>PowerShell REST Server Startup Command:</span>
-              <button className="btn-copy-cmd" onClick={copyToClipboard}>
-                {copiedCmd ? <Check size={12} color="#3fb950" /> : <Copy size={12} />}
-                {copiedCmd ? 'Copied!' : 'Copy'}
-              </button>
+          <div className="setup-steps-container">
+            <div className="settings-cmd-box">
+              <div className="cmd-box-header">
+                <span className="step-badge">Step 1: Authenticate Google Account (One-Time)</span>
+                <button className="btn-copy-cmd" onClick={copyCmd1}>
+                  {copiedCmd1 ? <Check size={12} color="#3fb950" /> : <Copy size={12} />}
+                  {copiedCmd1 ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <code>{authCmd}</code>
             </div>
-            <code>{startupCmd}</code>
+
+            <div className="settings-cmd-box">
+              <div className="cmd-box-header">
+                <span className="step-badge">Step 2: Start REST API Server</span>
+                <button className="btn-copy-cmd" onClick={copyCmd2}>
+                  {copiedCmd2 ? <Check size={12} color="#3fb950" /> : <Copy size={12} />}
+                  {copiedCmd2 ? 'Copied!' : 'Copy'}
+                </button>
+              </div>
+              <code>{serverCmd}</code>
+            </div>
           </div>
         </div>
       ) : (
         <div className="settings-log-body">
           <div className="log-terminal-header">
             <Terminal size={14} style={{ marginRight: 6 }} />
-            <span>Local Environment Verification & CLI Event Log</span>
+            <span>Local Environment Diagnostic & Error Trace Log</span>
           </div>
           <div className="log-terminal-viewport">
             {commandLogs.map((log, i) => (
