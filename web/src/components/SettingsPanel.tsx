@@ -59,7 +59,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     checkServerHealth();
   }, [checkServerHealth]);
 
-  const authCmd = `python -m notebooklm login`;
+  const authCmd = `python -m notebooklm login --browser msedge`;
   const serverCmd = `$env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server`;
 
   const copyCmd1 = () => {
