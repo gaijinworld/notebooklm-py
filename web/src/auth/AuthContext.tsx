@@ -21,6 +21,7 @@ interface AuthContextValue {
   setError: (err: string | null) => void;
   setNotice: (notice: string | null) => void;
   signInWithGoogle: () => Promise<void>;
+  signInWithGoogleRedirect: () => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -49,24 +50,38 @@ function formatFirebaseError(err: unknown): string {
 
 async function syncFirestoreArtifact(user: User): Promise<void> {
   try {
-    const artifactRef = doc(db, 'artifacts', 'notebooklm-py');
-    await setDoc(artifactRef, {
-      name: 'notebooklm-py',
-      title: 'NotebookLM Py',
-      description: 'Google Gemini NotebookLM Py Integration Artifact for Gamified Network Engineer App',
-      url: 'http://gaijinworld-local.local/notebooklm-py/',
-      status: 'active',
-      projectId: 'gamified-network-engineer-app',
-      projectNumber: '465331311664',
-      parentOrg: 'gaijinworld.com',
-      connectedUser: {
+    // 1. Sync document inside subcollection: artifacts/notebooklm-py/users/{user.uid}
+    const userSubcolRef = doc(db, 'artifacts', 'notebooklm-py', 'users', user.uid);
+    await setDoc(
+      userSubcolRef,
+      {
         uid: user.uid,
         email: user.email,
         displayName: user.displayName || user.email,
-        photoURL: user.photoURL || null
+        photoURL: user.photoURL || null,
+        lastLoginAt: new Date().toISOString(),
       },
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
+      { merge: true }
+    );
+
+    // 2. Sync top-level artifact document: artifacts/notebooklm-py
+    const artifactRef = doc(db, 'artifacts', 'notebooklm-py');
+    await setDoc(
+      artifactRef,
+      {
+        name: 'notebooklm-py',
+        title: 'NotebookLM Py',
+        description: 'Google Gemini NotebookLM Py Integration Artifact for Gamified Network Engineer App',
+        url: 'http://gaijinworld-local.local/notebooklm-py/',
+        status: 'active',
+        projectId: 'gamified-network-engineer-app',
+        projectNumber: '465331311664',
+        parentOrg: 'gaijinworld.com',
+        lastActiveUser: user.email,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
   } catch (err) {
     console.warn('Failed to sync Firestore artifact:', err);
   }
@@ -99,10 +114,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setNotice(null);
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (err) {
-      const code = (err as { code?: string })?.code || '';
-      if (['auth/popup-blocked', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request'].includes(code)) {
-        setNotice('Continuing with Google in full-page sign-in mode...');
+    } catch (err: any) {
+      const code = err?.code || '';
+      const msg = err?.message || '';
+      if (
+        ['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/operation-not-supported-in-this-environment', 'auth/cancelled-popup-request', 'auth/internal-error'].includes(code) ||
+        msg.includes('Cross-Origin-Opener-Policy') ||
+        msg.includes('storage') ||
+        msg.includes('Tracking Prevention')
+      ) {
+        setNotice('Redirecting to Google sign-in (Edge Tracking Prevention mode)...');
         await signInWithRedirect(auth, googleProvider);
         return;
       }
@@ -110,6 +131,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(detail);
       throw new Error(detail);
     }
+  }, []);
+
+  const signInWithGoogleRedirect = useCallback(async () => {
+    setError(null);
+    setNotice('Redirecting to Google sign-in...');
+    await signInWithRedirect(auth, googleProvider);
   }, []);
 
   const signInWithEmail = useCallback(async (email: string, password: string) => {
@@ -165,6 +192,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setError,
         setNotice,
         signInWithGoogle,
+        signInWithGoogleRedirect,
         signInWithEmail,
         register,
         resetPassword,

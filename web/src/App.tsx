@@ -31,18 +31,25 @@ export const MainWorkspace: React.FC = () => {
       headers['Authorization'] = `Bearer ${apiToken}`;
     }
 
-    const res = await fetch(url, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    try {
+      const res = await fetch(url, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
 
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`API error ${res.status}: ${text || res.statusText}`);
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`API error ${res.status}: ${text || res.statusText}`);
+      }
+
+      return await res.json();
+    } catch (err: any) {
+      if (err.name === 'TypeError' || err.message?.includes('Failed to fetch')) {
+        throw new Error(`Cannot connect to local server (${apiUrl}). Ensure notebooklm-server is running.`);
+      }
+      throw err;
     }
-
-    return res.json();
   }, [apiUrl, apiToken]);
 
   const loadNotebooks = useCallback(async () => {

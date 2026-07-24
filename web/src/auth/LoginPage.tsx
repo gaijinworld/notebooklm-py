@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext';
 import { Shield, CheckCircle2, Eye, EyeOff } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { signInWithGoogle, signInWithEmail, register, resetPassword, error, setError, notice, setNotice } = useAuth();
+  const { signInWithGoogle, signInWithGoogleRedirect, signInWithEmail, register, resetPassword, error, setError, notice, setNotice } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -15,6 +15,18 @@ export const LoginPage: React.FC = () => {
     setNotice(null);
     try {
       await signInWithGoogle();
+    } catch {
+      // Handled in AuthContext
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleGoogleRedirect = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await signInWithGoogleRedirect();
     } catch {
       // Handled in AuthContext
     } finally {
