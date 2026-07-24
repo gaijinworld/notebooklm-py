@@ -20,8 +20,8 @@ from pathlib import Path
 from typing import Any
 
 import click
-
 import controlled_cinematic_pipeline as base
+
 from notebooklm import NotebookLMClient
 
 
@@ -458,9 +458,7 @@ def main(
                 enhance_prompt=enhance_prompt,
                 seed=seed,
                 storyboard_file=storyboard_file,
-                storyboard_instructions=base._read_optional_text(
-                    storyboard_instructions_file
-                ),
+                storyboard_instructions=base._read_optional_text(storyboard_instructions_file),
                 video_overview_file=video_overview_file,
                 video_overview_instructions=base._read_optional_text(
                     video_overview_instructions_file
