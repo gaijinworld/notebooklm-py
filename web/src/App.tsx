@@ -100,26 +100,6 @@ export const MainWorkspace: React.FC = () => {
     }
   }, [selectedNotebook, activeTab, loadTabData]);
 
-  // Automatically initialize & launch REST server for the signed-in user profile
-  useEffect(() => {
-    if (!userEmail) return;
-
-    const autoInitServer = async () => {
-      try {
-        await fetch('/wp-json/notebooklm-py/v1/start-server', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile: userEmail, token: apiToken || 'mysecrettoken' })
-        });
-      } catch {
-        // Ignore if bridge endpoint unavailable
-      }
-      loadNotebooks();
-    };
-
-    autoInitServer();
-  }, [userEmail, loadNotebooks, apiToken]);
-
   const handleGenerate = async (type: string) => {
     if (!selectedNotebook) return;
     try {
