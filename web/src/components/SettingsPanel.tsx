@@ -125,25 +125,37 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
   const handleStartServer = async () => {
     setStartingServer(true);
-    navigator.clipboard.writeText(serverCmd);
     addLog('cmd', 'START SERVER', `Triggering server launch for profile: ${userEmail}...`);
 
     try {
-      await fetch('/wp-json/notebooklm-py/v1/start-server', {
+      const res = await fetch('/wp-json/notebooklm-py/v1/start-server', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile: userEmail, token: apiToken || 'mysecrettoken' })
       });
-      addLog('success', 'START SERVER BRIDGE', 'Background launch signal sent to local PHP service');
+      const data = await res.json();
+
+      if (data.status === 'auth_required') {
+        addLog('error', 'AUTH REQUIRED', data.message);
+        addLog('cmd', 'RUN LOGIN', `${data.python || 'python'} -m notebooklm --profile "${userEmail}" login --browser msedge`);
+        setStartingServer(false);
+        return;
+      }
+
+      addLog('success', 'START SERVER BRIDGE', `Background launch: ${data.message} (python: ${data.python || 'python'})`);
+      if (data.log_file) addLog('info', 'LOG FILE', `Errors logged to: ${data.log_file}`);
     } catch {
-      addLog('info', 'START SERVER COPY', 'Command copied to clipboard! Paste into PowerShell to start');
+      addLog('error', 'START SERVER BRIDGE', 'Failed to call WordPress REST endpoint');
     }
 
-    setTimeout(() => checkServerHealth(), 1500);
-    setTimeout(() => {
-      checkServerHealth();
-      setStartingServer(false);
-    }, 3500);
+    // Aggressive retry: poll healthz every 2s for up to 30s (15 attempts)
+    for (let i = 0; i < 15; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      await checkServerHealth();
+      // checkServerHealth updates healthStatus async, so we need to check after
+      // We use a small delay to let the state update propagate
+    }
+    setStartingServer(false);
   };
 
   const handleTestConnectionClick = () => {
