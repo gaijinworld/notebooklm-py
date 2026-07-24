@@ -24,8 +24,15 @@ export const TabContent: React.FC<TabContentProps> = ({
 }) => {
   const [generateType, setGenerateType] = useState('audio');
 
-  const getStatusBadge = (status?: string) => {
-    const s = status?.toLowerCase() || 'ready';
+  const getStatusBadge = (status?: unknown) => {
+    // Normalize any status value to a lowercase string.
+    // API may return objects, numbers, or null — coerce safely.
+    let s = 'ready';
+    if (typeof status === 'string') {
+      s = status.toLowerCase();
+    } else if (status != null) {
+      s = String(status).toLowerCase();
+    }
     if (s === 'ready' || s === 'completed') {
       return <span className="status-badge ready"><CheckCircle size={10} style={{marginRight:3}} />{s}</span>;
     }
@@ -75,9 +82,13 @@ export const TabContent: React.FC<TabContentProps> = ({
               <p>No {activeTab} found in this notebook.</p>
             </div>
           ) : (
-            items.map((item) => {
-              const id = item.id || item.source_id || item.artifact_id || item.note_id || item.run_id || '';
-              const title = item.title || item.name || item.kind || item.type || 'Untitled';
+            items.map((item, idx) => {
+              // Coerce all potentially non-string fields to safe display values
+              const id = String(item.id || item.source_id || item.artifact_id || item.note_id || item.run_id || `item-${idx}`);
+              const rawTitle = item.title || item.name || item.kind || item.type || 'Untitled';
+              const title = typeof rawTitle === 'string' ? rawTitle : String(rawTitle);
+              const rawKind = item.kind || item.type || activeTab;
+              const kind = typeof rawKind === 'string' ? rawKind : String(rawKind);
               const isActive = selectedItem && (selectedItem.id === id || selectedItem.source_id === id);
 
               return (
@@ -88,7 +99,7 @@ export const TabContent: React.FC<TabContentProps> = ({
                 >
                   <div className="li-title">{title}</div>
                   <div className="li-meta">
-                    <span className="kind-tag">{item.kind || item.type || activeTab}</span>
+                    <span className="kind-tag">{kind}</span>
                     {getStatusBadge(item.status || item.state)}
                   </div>
                 </div>
@@ -127,20 +138,20 @@ export const TabContent: React.FC<TabContentProps> = ({
         ) : (
           <div className="detail-content-view">
             <div className="detail-card-box">
-              <h3>{selectedItem.title || selectedItem.name || 'Item Details'}</h3>
+              <h3>{String(selectedItem.title || selectedItem.name || 'Item Details')}</h3>
               <div className="field-row">
                 <span className="field-label">ID:</span>
-                <span className="field-val">{selectedItem.id || selectedItem.source_id || selectedItem.artifact_id}</span>
+                <span className="field-val">{String(selectedItem.id || selectedItem.source_id || selectedItem.artifact_id || '')}</span>
               </div>
               <div className="field-row">
                 <span className="field-label">Type / Kind:</span>
-                <span className="field-val">{selectedItem.kind || selectedItem.type || 'N/A'}</span>
+                <span className="field-val">{String(selectedItem.kind || selectedItem.type || 'N/A')}</span>
               </div>
               <div className="field-row">
                 <span className="field-label">Status:</span>
-                <span className="field-val">{selectedItem.status || selectedItem.state || 'Ready'}</span>
+                <span className="field-val">{String(selectedItem.status || selectedItem.state || 'Ready')}</span>
               </div>
-              {selectedItem.url && (
+              {selectedItem.url && typeof selectedItem.url === 'string' && (
                 <div className="field-row">
                   <span className="field-label">URL / File:</span>
                   <a className="field-link" href={selectedItem.url} target="_blank" rel="noreferrer">
@@ -150,7 +161,7 @@ export const TabContent: React.FC<TabContentProps> = ({
               )}
               {selectedItem.content || selectedItem.text ? (
                 <div className="detail-text-block">
-                  <pre>{selectedItem.content || selectedItem.text}</pre>
+                  <pre>{String(selectedItem.content || selectedItem.text || '')}</pre>
                 </div>
               ) : null}
             </div>

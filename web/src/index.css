@@ -525,6 +525,29 @@ body {
   border-radius: var(--radius);
   border: 1px solid var(--border);
   transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.server-health-card:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.server-health-card:active {
+  transform: translateY(0);
+  filter: brightness(0.95);
+}
+
+.server-health-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.server-health-card.starting {
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .server-health-card.online {

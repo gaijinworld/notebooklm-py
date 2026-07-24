@@ -44,20 +44,22 @@ export const NotebookList: React.FC<NotebookListProps> = ({
           notebooks.map((nb) => {
             const isActive = selectedNotebook?.id === nb.id;
             const count = nb.source_count ?? nb.sources_count ?? 0;
+            const safeId = String(nb.id || '');
+            const safeTitle = typeof nb.title === 'string' ? nb.title : String(nb.title || 'Untitled Notebook');
             return (
               <div
-                key={nb.id}
+                key={safeId}
                 className={`notebook-item ${isActive ? 'active' : ''}`}
                 onClick={() => onSelectNotebook(nb)}
               >
                 <div className="nb-title">
                   <BookOpen size={14} style={{ marginRight: 6 }} />
-                  {nb.title || 'Untitled Notebook'}
+                  {safeTitle}
                 </div>
                 <div className="nb-meta">
                   <span>{count} {count === 1 ? 'source' : 'sources'}</span>
                   <span>•</span>
-                  <span>ID: {nb.id.slice(0, 8)}...</span>
+                  <span>ID: {safeId.slice(0, 8)}...</span>
                 </div>
               </div>
             );

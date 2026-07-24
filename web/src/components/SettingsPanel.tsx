@@ -122,6 +122,27 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
     setStartingServer(true);
     addLog('cmd', 'START SERVER', `Triggering server launch for profile: ${userEmail}...`);
 
+    // --- Step 0: Pre-flight auth check (mirrors SKILL.md diagnosis) ---
+    // If the server was previously running but /v1/notebooks returned an auth
+    // error, the Google cookies are expired. Kill the stale server and force
+    // re-authentication before attempting a restart.
+    addLog('info', 'PRE-FLIGHT', 'Checking for stale server process...');
+    try {
+      const staleCheck = await fetch(apiUrl.replace(/\/+$/, '') + '/v1/notebooks', {
+        headers: { 'Authorization': `Bearer ${apiToken || 'mysecrettoken'}` }
+      });
+      if (staleCheck.status === 401 || staleCheck.status === 403) {
+        addLog('error', 'AUTH EXPIRED', 'Stale server detected with expired cookies. Kill old process and re-authenticate.');
+        addLog('cmd', 'FIX STEP 1', `Kill any running python processes serving notebooklm-server, then run: python -m notebooklm --profile "${userEmail}" login --fresh`);
+        addLog('cmd', 'FIX STEP 2', `Then restart: $env:NOTEBOOKLM_PROFILE="${userEmail}"; $env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server --host 127.0.0.1 --port 8000`);
+        setStartingServer(false);
+        return;
+      }
+    } catch {
+      // Connection refused = server not running, which is expected. Continue.
+      addLog('info', 'PRE-FLIGHT', 'No stale server detected (connection refused). Proceeding with launch.');
+    }
+
     try {
       const res = await fetch('/wp-json/notebooklm-py/v1/start-server', {
         method: 'POST',
@@ -194,8 +215,15 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
             <span>Active Web Account Profile: <strong>{userEmail}</strong> (NOTEBOOKLM_PROFILE="{profileName}")</span>
           </div>
 
-          {/* Server Health Status Monitor Card */}
-          <div className={`server-health-card ${healthStatus.isOnline ? 'online' : 'offline'}`}>
+          {/* Server Health Status Monitor Card — click anywhere on the card to Start/Fix */}
+          <div
+            className={`server-health-card ${healthStatus.isOnline ? 'online' : 'offline'} ${startingServer ? 'starting' : ''}`}
+            onClick={handleStartServer}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleStartServer(); }}
+            title={healthStatus.isOnline ? 'Click to restart server' : 'Click to start / fix server'}
+          >
             <div className="health-card-left">
               <Activity size={18} className="health-icon" />
               <div className="health-info-text">
@@ -206,11 +234,11 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
               </div>
             </div>
             <div className="health-card-actions">
-              <button className="btn-start-server" onClick={handleStartServer} disabled={startingServer}>
+              <button className="btn-start-server" onClick={(e) => { e.stopPropagation(); handleStartServer(); }} disabled={startingServer}>
                 <Play size={13} style={{ marginRight: 4 }} />
                 {startingServer ? 'Launching...' : healthStatus.isOnline ? 'Restart Server' : 'Start / Fix Server'}
               </button>
-              <button className="btn-health-check" onClick={checkServerHealth} disabled={healthStatus.checking}>
+              <button className="btn-health-check" onClick={(e) => { e.stopPropagation(); checkServerHealth(); }} disabled={healthStatus.checking}>
                 <RefreshCw size={13} className={healthStatus.checking ? 'spin' : ''} style={{ marginRight: 4 }} />
                 {healthStatus.checking ? 'Checking...' : 'Check Status'}
               </button>

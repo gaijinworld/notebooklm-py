@@ -2,7 +2,7 @@
 /**
  * Plugin Name: NotebookLM Py
  * Description: WordPress-hosted NotebookLM-py React 19 + Vite SPA Application.
- * Version: 2026.07.24.01
+ * Version: 2026.07.24.02
  * Author: GaijinWorld
  * Requires PHP: 8.1
  */
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('NBLM_PLUGIN_VERSION', '2026.07.24.01');
+define('NBLM_PLUGIN_VERSION', '2026.07.24.02');
 define('NBLM_PLUGIN_FILE', __FILE__);
 define('NBLM_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('NBLM_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -185,7 +185,8 @@ final class NBLM_Plugin {
         );
 
         if ($entry !== null) {
-            $tags[] = sprintf('<script type="module" src="%s"></script>', esc_url('/wp-content/plugins/notebooklm-py/dist/' . $entry['file']));
+            $script_url = add_query_arg('ver', NBLM_PLUGIN_VERSION, '/wp-content/plugins/notebooklm-py/dist/' . $entry['file']);
+            $tags[] = sprintf('<script type="module" src="%s"></script>', esc_url($script_url));
         }
 
         return implode('', $tags);
