@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/gaijinworld/notebooklm-py/gemini-opal/schemas/render-manifest.schema.json",
+  "title": "Gemini Opal Cinematic Render Handoff",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "mode",
+    "topic",
+    "scene_count",
+    "settings",
+    "cost_guard",
+    "storyboard_file"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "mode": {"enum": ["plan_only", "one_clip_test", "budget_render", "full_render"]},
+    "topic": {"type": "string", "minLength": 1},
+    "scene_count": {"type": "integer", "minimum": 1},
+    "storyboard_file": {"type": "string"},
+    "settings": {
+      "type": "object",
+      "required": ["model", "aspect_ratio", "resolution", "duration_seconds", "person_generation"],
+      "properties": {
+        "model": {"type": "string"},
+        "aspect_ratio": {"enum": ["16:9", "9:16"]},
+        "resolution": {"enum": ["720p", "1080p", "4k"]},
+        "duration_seconds": {"enum": [4, 6, 8]},
+        "person_generation": {"enum": ["allow_all", "allow_adult"]},
+        "reference_image_count": {"type": "integer", "minimum": 0, "maximum": 3}
+      }
+    },
+    "cost_guard": {
+      "type": "object",
+      "required": ["narration_seconds", "full_clip_count", "selected_clip_count", "rendered_seconds", "approved"],
+      "properties": {
+        "narration_seconds": {"type": "integer", "minimum": 1},
+        "full_clip_count": {"type": "integer", "minimum": 1},
+        "selected_clip_count": {"type": "integer", "minimum": 0},
+        "rendered_seconds": {"type": "integer", "minimum": 0},
+        "maximum_clips": {"type": "integer", "minimum": 1},
+        "approved": {"type": "boolean"}
+      }
+    }
+  },
+  "additionalProperties": true
+}

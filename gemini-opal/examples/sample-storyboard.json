@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "title": "Controlled Cinematic Overview",
+  "summary": "A source-grounded documentary overview prepared for review before generation.",
+  "scenes": [
+    {
+      "title": "Opening context",
+      "narration": "Introduce the central source-supported question and why it matters.",
+      "visual_prompt": "A fictional adult presenter introduces the topic in a modern Japanese office with subtle environmental movement.",
+      "composition": "eye-level medium close-up, unobstructed full face, both eyes visible",
+      "camera": "slow dolly-in while maintaining a front or natural three-quarter facial angle",
+      "lens": "50mm natural perspective, face in sharp focus",
+      "ambiance": "soft frontal daylight with balanced fill and natural skin tones",
+      "negative_prompt": "rear-only view, silhouette, hidden face, distorted face, text covering face",
+      "duration_seconds": 8
+    },
+    {
+      "title": "Evidence and explanation",
+      "narration": "Explain the strongest evidence and connect it to the source chronology.",
+      "visual_prompt": "Two fictional adult colleagues discuss source documents at a meeting table, with both faces revealed through cross-coverage.",
+      "composition": "eye-level two-shot followed by face-visible reverse angles",
+      "camera": "gentle lateral track with stable facial framing",
+      "lens": "50mm lens, natural proportions, readable documents without obscuring faces",
+      "ambiance": "neutral office lighting with soft key and fill",
+      "negative_prompt": "back-of-head primary view, face obscured by document, silhouette, static tableau",
+      "duration_seconds": 8
+    }
+  ]
+}

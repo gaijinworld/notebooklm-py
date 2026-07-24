@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NotebookLM Cinematic Planner</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">
+          <span class="badge success">No video calls by default</span>
+          <span class="badge">PR #14 compatible</span>
+          <span class="badge">Local-only prototype</span>
+        </div>
+        <h1>NotebookLM Cinematic Planner</h1>
+        <p class="subtitle">Review the storyboard, enforce Veo constraints, estimate clip volume, and export a complete local-render handoff before spending NotebookLM or Veo credits.</p>
+      </div>
+      <aside class="status-card">
+        <strong id="status-title">Plan-only mode</strong>
+        <small id="status-detail">This browser app does not call NotebookLM, Veo, FFmpeg, or any external API.</small>
+      </aside>
+    </section>
+
+    <nav class="tabs" aria-label="Planner sections">
+      <button class="tab" data-tab="project" aria-selected="true">1. Project</button>
+      <button class="tab" data-tab="storyboard" aria-selected="false">2. Storyboard</button>
+      <button class="tab" data-tab="cost" aria-selected="false">3. Cost guard</button>
+      <button class="tab" data-tab="handoff" aria-selected="false">4. Handoff</button>
+    </nav>
+
+    <section id="project" class="panel active">
+      <h2>Project setup</h2>
+      <div class="callout">Use uploaded sources or a NotebookLM-produced source brief as the factual basis. The Gem/Opal workflow should use text models only until you explicitly select a one-clip test.</div>
+
+      <div class="grid two" style="margin-top:18px">
+        <label><span>Project title</span><input id="title" value="Controlled Cinematic Overview"></label>
+        <label><span>Language</span><input id="language" value="en"></label>
+      </div>
+      <label style="margin-top:16px"><span>Topic and editorial goal</span><textarea id="topic">Create a source-grounded cinematic documentary overview with clear, face-visible fictional adult presenters when people improve understanding.</textarea></label>
+      <label style="margin-top:16px"><span>Source notes or NotebookLM source brief</span><textarea id="sources" placeholder="Paste source-grounded notes here. This prototype stores them only in the current browser session."></textarea></label>
+
+      <div class="grid four" style="margin-top:16px">
+        <label><span>Estimated narration minutes</span><input id="minutes" type="number" min="1" max="120" value="10"></label>
+        <label><span>Scene count</span><input id="scene-count" type="number" min="1" max="60" value="12"></label>
+        <label><span>Aspect ratio</span><select id="aspect"><option>16:9</option><option>9:16</option></select></label>
+        <label><span>Resolution</span><select id="resolution"><option>720p</option><option selected>1080p</option><option>4k</option></select></label>
+      </div>
+
+      <div class="grid four" style="margin-top:16px">
+        <label><span>Veo model</span><select id="model"><option value="veo-3.1-fast-generate-preview">Fast</option><option value="veo-3.1-generate-preview">Standard</option></select></label>
+        <label><span>Clip duration</span><select id="duration"><option value="4">4 seconds</option><option value="6">6 seconds</option><option value="8" selected>8 seconds</option></select></label>
+        <label><span>Person generation</span><select id="person"><option value="allow_all">allow_all</option><option value="allow_adult">allow_adult</option></select></label>
+        <label><span>Reference images</span><input id="references" type="number" min="0" max="3" value="0"></label>
+      </div>
+
+      <div class="toolbar">
+        <button id="starter" class="btn primary">Create editable starter storyboard</button>
+        <button class="btn" data-go="storyboard">Review storyboard</button>
+      </div>
+    </section>
+
+    <section id="storyboard" class="panel">
+      <div class="scene-head">
+        <div>
+          <h2 style="margin-bottom:5px">Storyboard editor</h2>
+          <div class="badge" id="scene-badge">0 scenes</div>
+        </div>
+        <div class="toolbar" style="margin:0">
+          <button id="add-scene" class="btn">Add scene</button>
+          <label class="btn" style="display:inline-flex;align-items:center;gap:8px">Import JSON<input id="import-json" type="file" accept="application/json,.json" class="hidden"></label>
+          <button id="export-storyboard" class="btn">Export JSON</button>
+        </div>
+      </div>
+      <div id="scene-list" class="scene-list"></div>
+      <div class="toolbar">
+        <button class="btn primary" data-go="cost">Calculate cost guard</button>
+      </div>
+    </section>
+
+    <section id="cost" class="panel">
+      <h2>Cost and credit guard</h2>
+      <div class="grid three">
+        <label><span>Mode</span><select id="mode"><option value="plan_only">Plan only</option><option value="one_clip_test">One-clip test</option><option value="budget_render">Budget render</option><option value="full_render">Full render handoff</option></select></label>
+        <label><span>Maximum clips</span><input id="max-clips" type="number" min="1" max="500" value="24"></label>
+        <label><span>Notebook ID placeholder</span><input id="notebook-id" value="YOUR_NOTEBOOK_ID"></label>
+      </div>
+
+      <div class="metrics" style="margin-top:18px">
+        <div class="metric"><span>Full clip estimate</span><strong id="full-clips">0</strong></div>
+        <div class="metric"><span>Selected clips</span><strong id="selected-clips">0</strong></div>
+        <div class="metric"><span>Rendered seconds</span><strong id="rendered-seconds">0</strong></div>
+        <div class="metric"><span>Spend risk</span><strong id="risk">Low</strong></div>
+      </div>
+
+      <div id="validation" class="callout" style="margin-top:18px"></div>
+
+      <label class="check-row" style="margin-top:18px">
+        <input id="approval" type="checkbox">
+        <span><strong>I approve the full-render handoff</strong><small>This does not generate video in the browser. It only unlocks export of the full-render command.</small></span>
+      </label>
+
+      <div class="toolbar">
+        <button class="btn primary" data-go="handoff">Build handoff package</button>
+      </div>
+    </section>
+
+    <section id="handoff" class="panel">
+      <h2>Local-render handoff</h2>
+      <div class="callout" id="handoff-banner">No NotebookLM Video Overview or Veo request has been started. Review and export the package, then run it locally when approved.</div>
+      <div class="handoff-grid" style="margin-top:18px">
+        <div class="handoff-nav">
+          <button class="btn handoff-choice" data-output="storyboard">storyboard.json</button>
+          <button class="btn handoff-choice" data-output="manifest">render-manifest.json</button>
+          <button class="btn handoff-choice" data-output="instructions">video-overview-instructions.md</button>
+          <button class="btn handoff-choice" data-output="command">run-controlled-cinematic.ps1</button>
+        </div>
+        <div>
+          <pre id="output-preview"></pre>
+          <div class="toolbar">
+            <button id="copy-output" class="btn">Copy current output</button>
+            <button id="download-output" class="btn primary">Download current output</button>
+          </div>
+        </div>
+      </div>
+      <p class="footer-note">This planner never stores an API key and never starts a media-generation request. Provider safety enforcement remains active in the local NotebookLM and Veo stages.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
