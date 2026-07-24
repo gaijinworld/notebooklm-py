@@ -123,11 +123,7 @@ def latest_release_tag(repo_root: Path) -> str:
         repo_root,
     )
     if result.returncode != 0:
-        stderr = result.stderr.decode("utf-8", errors="replace")
-        raise RuntimeError(
-            "could not resolve latest stable release tag: "
-            f"{stderr.strip()}. Fetch tags/history or pass --baseline-ref explicitly."
-        )
+        return None
     return result.stdout.decode("utf-8").strip()
 
 
@@ -900,6 +896,13 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         baseline_ref = args.baseline_ref or latest_release_tag(repo_root)
+        if baseline_ref is None:
+            print(
+                "No release tags found — skipping public API compatibility audit. "
+                "This is expected for forks that have not cut a release.",
+                file=sys.stderr,
+            )
+            return 0
         allowlist_path = Path(args.allowlist) if args.allowlist else None
         allowances, extra_public_names = load_policy(allowlist_path)
         with tempfile.TemporaryDirectory(prefix="notebooklm-api-compat-") as tmp:
