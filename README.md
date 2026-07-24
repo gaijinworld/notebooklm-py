@@ -316,6 +316,10 @@ asyncio.run(main())
 
 Latest commits from `main`, newest first. Full history: [CHANGELOG.md](CHANGELOG.md).
 
+### 2026-07-24
+
+- **fix: server start bridge — use raw profile name, return auth_required, add error logging (#12)** (`de74a38`) — Fixes PHP `handle_start_server` that never launched `notebooklm-server` due to profile name sanitization mismatch, impossible background `login --fresh`, and no stderr logging. Now returns `auth_required` with login command, tries multiple Python paths, and logs errors to `~/.notebooklm/server-bridge.log`.
+
 ### 2026-07-23
 
 - **fix: store per-user Firestore docs in users subcollection (#10)** (`a260fcb`) — Each signed-in user now gets a separate document at `artifacts/notebooklm-py/users/{uid}` instead of overwriting a single `connectedUser` field.
