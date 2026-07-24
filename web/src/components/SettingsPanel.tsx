@@ -22,7 +22,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
   const [copiedCmd2, setCopiedCmd2] = useState(false);
   const [activeTab, setActiveTab] = useState<'config' | 'log'>('config');
 
-  const authCmd = `notebooklm login`;
+  const authCmd = `python -m notebooklm login`;
   const serverCmd = `$env:NOTEBOOKLM_SERVER_TOKEN="${apiToken || 'mysecrettoken'}"; python -m notebooklm.server`;
 
   const copyCmd1 = () => {
