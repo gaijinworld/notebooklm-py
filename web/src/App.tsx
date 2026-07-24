@@ -23,7 +23,9 @@ export const MainWorkspace: React.FC = () => {
   const [tabLoading, setTabLoading] = useState(false);
 
   const apiCall = useCallback(async (method: string, path: string, body?: any) => {
-    const url = apiUrl.replace(/\/+$/, '') + path;
+    const cleanBase = apiUrl.replace(/\/+$/, '');
+    const formattedPath = path.startsWith('/v1') ? path : `/v1${path.startsWith('/') ? path : '/' + path}`;
+    const url = cleanBase + formattedPath;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
