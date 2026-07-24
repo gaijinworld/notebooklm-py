@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Terminal, Copy, Check, Server, ShieldAlert, ShieldCheck, AlertCircle, RefreshCw, KeyRound } from 'lucide-react';
+import { Terminal, Copy, Check, Server, ShieldAlert, ShieldCheck, RefreshCw, HelpCircle, ArrowRight } from 'lucide-react';
 
 interface SettingsPanelProps {
   apiUrl: string;
@@ -54,7 +54,7 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           onClick={() => setActiveTab('config')}
         >
           <Server size={14} style={{ marginRight: 5 }} />
-          REST API Connection & Environment
+          REST API Connection & Local Environment Setup Guide
         </button>
         <button
           className={`settings-tab-btn ${activeTab === 'log' ? 'active' : ''}`}
@@ -112,10 +112,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
           <div className="setup-steps-container">
             <div className="settings-cmd-box">
               <div className="cmd-box-header">
-                <span className="step-badge">Step 1: Authenticate Google Account (One-Time)</span>
+                <span className="step-badge">Step 1: Authenticate Google Account (Run once in PowerShell)</span>
                 <button className="btn-copy-cmd" onClick={copyCmd1}>
                   {copiedCmd1 ? <Check size={12} color="#3fb950" /> : <Copy size={12} />}
-                  {copiedCmd1 ? 'Copied!' : 'Copy'}
+                  {copiedCmd1 ? 'Copied!' : 'Copy Command'}
                 </button>
               </div>
               <code>{authCmd}</code>
@@ -123,14 +123,39 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({
 
             <div className="settings-cmd-box">
               <div className="cmd-box-header">
-                <span className="step-badge">Step 2: Start REST API Server</span>
+                <span className="step-badge">Step 2: Start REST API Server (Keep running in PowerShell)</span>
                 <button className="btn-copy-cmd" onClick={copyCmd2}>
                   {copiedCmd2 ? <Check size={12} color="#3fb950" /> : <Copy size={12} />}
-                  {copiedCmd2 ? 'Copied!' : 'Copy'}
+                  {copiedCmd2 ? 'Copied!' : 'Copy Command'}
                 </button>
               </div>
               <code>{serverCmd}</code>
             </div>
+          </div>
+
+          <div className="setup-help-guide-card">
+            <div className="guide-card-title">
+              <HelpCircle size={15} color="#58a6ff" style={{ marginRight: 6 }} />
+              <span>Complete Setup Walkthrough</span>
+            </div>
+            <ol className="guide-steps-list">
+              <li>
+                <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
+                Open <strong>Windows PowerShell</strong> on your computer.
+              </li>
+              <li>
+                <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
+                Run <code>python -m notebooklm login</code>. A Chromium window will open. Sign into your Google Account once, then close the browser window.
+              </li>
+              <li>
+                <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
+                Run <code>$env:NOTEBOOKLM_SERVER_TOKEN="mysecrettoken"; python -m notebooklm.server</code> to start the backend proxy server on port 8000. Keep this terminal open.
+              </li>
+              <li>
+                <ArrowRight size={12} style={{ marginRight: 6, color: '#58a6ff' }} />
+                Click <strong>Test Connection</strong> above to verify connection and load all your Gemini notebooks!
+              </li>
+            </ol>
           </div>
         </div>
       ) : (

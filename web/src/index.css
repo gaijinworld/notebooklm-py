@@ -619,8 +619,50 @@ body {
   font-size: 0.75rem;
 }
 
-.log-line.error .log-status-tag { background: rgba(248, 81, 73, 0.2); color: var(--red); }
-.log-line.action .log-status-tag { background: rgba(210, 153, 34, 0.25); color: #e3b341; font-weight: 600; }
+.setup-help-guide-card {
+  background: #0d1117;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.guide-card-title {
+  display: flex;
+  align-items: center;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.guide-steps-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #c9d1d9;
+  padding: 0;
+}
+
+.guide-steps-list li {
+  display: flex;
+  align-items: flex-start;
+  line-height: 1.45;
+}
+
+.guide-steps-list code {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  color: var(--accent);
+}
 
 
 /* Workspace Layout */
