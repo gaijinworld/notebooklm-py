@@ -318,8 +318,10 @@ Latest commits from `main`, newest first. Full history: [CHANGELOG.md](CHANGELOG
 
 ### 2026-07-23
 
+- **fix: store per-user Firestore docs in users subcollection (#10)** (`a260fcb`) — Each signed-in user now gets a separate document at `artifacts/notebooklm-py/users/{uid}` instead of overwriting a single `connectedUser` field.
+- **refactor(web): clean up React 19 Vite SPA into web/ subfolder with dist base asset routing** (`b3eb7ff`) — Restructures the React app source into `web/` with Vite build output and WordPress plugin asset routing.
 - **feat(auth): add Firebase Google Sign-In & Email auth overlay with Cloud Firestore notebooklm-py artifact sync** — Firebase Auth overlay for Google Sign-in and email/password authentication, with automatic sync to Cloud Firestore database `artifacts/notebooklm-py` and Gemini notebook listing.
-- **fix: update runtime-contract commit hash to 47a690c8** (`4a66eb2c`) — Updates commit hash in runtime-contract.json.
+- **fix: update runtime-contract commit hash to 47a690c8 (#9)** (`4a66eb2`) — Updates stale commit hash in runtime-contract.json and fixes deployedAt timestamp.
 - **fix: address review issues from PR #7 — quote fix, stale hash, CORS test, isArray guard (#8)** (`47a690c8`) — Addresses PR review fixes for quote handling, CORS tests, and type guards.
 - **feat: replace static landing page with interactive NotebookLM browser v2026.07.23.19 (#7)** (`5951dfb1`) — Interactive SPA that browses notebooks, sources, artifacts, notes, and research via the REST API. Adds CORS middleware to the server.
 - **chore: add web landing page v2026.07.23.17 + deploy to LocalWP (#5)** (`74c2b3b`) — Initial static landing page with visibleVersion 2026.07.23.17 and runtime-contract.json.
